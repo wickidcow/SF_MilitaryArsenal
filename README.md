@@ -1,7 +1,7 @@
 # ⚔️ Military Arsenal Legacy
 
 [![Paper](https://img.shields.io/badge/Paper%20%2F%20Purpur-26.2%2B-blue)](https://papermc.io/)
-[![Java](https://img.shields.io/badge/Java-21%2B-orange)](https://adoptium.net/)
+[![Java](https://img.shields.io/badge/Java-25-orange)](https://adoptium.net/)
 [![Slimefun Legacy](https://img.shields.io/badge/Slimefun-Legacy-brightgreen)](https://github.com/wickidcow/Slimefun-Legacy)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
@@ -16,16 +16,17 @@ This repository is a **Slimefun Legacy compatibility fork** maintained for the A
 ## 🧰 Legacy compatibility
 
 - Paper / Purpur **26.2+** target
-- Java **21+** bytecode; CI builds with Java 25
-- **Slimefun Legacy** is the required runtime dependency
+- Java **25** runtime, matching Paper 26.2 requirements
+- Java **21-compatible plugin bytecode** for a conservative addon ABI; CI builds with Java 25
+- **Slimefun Legacy** is the only hard addon dependency
 - Preserves the upstream 2.4.8 turret and structure overhaul
 - Replaces the upstream Drake-only compile dependency with the public Slimefun4-compatible API surface used by Slimefun Legacy
 - Keeps upstream source easy to synchronize by preparing a Legacy-compatible generated source tree during Maven builds
 - Direct, versioned GitHub Actions JAR output: `SF_MilitaryArsenal_Legacy_v1.0.0.jar`
 
-### Optional addon integration
+### Optional Networks compatibility
 
-**Networks** is optional. If a compatible Networks build is present, Military Arsenal attempts to register compatible recipes through a reflection-based bridge. If the Networks API is unavailable or changes, Military Arsenal continues loading without that bridge.
+**Networks is not required.** When Networks is installed, Paper loads Military Arsenal first so its Slimefun items and recipes are already registered when Networks builds its supported recipe indexes. This uses normal Slimefun registry discovery rather than a private or reflection-based Networks API, which keeps the addons independently updatable.
 
 **Infinity Expansion / IE1 is not a dependency of Military Arsenal. IE2 is therefore not required.** The Void and antimatter progression in this addon belongs to Military Arsenal itself and does not use Infinity Expansion item IDs.
 
@@ -35,8 +36,8 @@ This repository is a **Slimefun Legacy compatibility fork** maintained for the A
 |---|---|
 | Slimefun Legacy | **Required** |
 | Paper or Purpur 26.2+ | **Required / supported target** |
-| Java 21+ | **Required** |
-| Networks | Optional integration |
+| Java 25 | **Required by Paper 26.2** |
+| Networks | Optional; automatic load-order compatibility |
 | Infinity Expansion / IE1 | Not required |
 | Infinity Expansion 2 / IE2 | Not required |
 | Folia | Not declared supported |
@@ -70,21 +71,23 @@ This repository is a **Slimefun Legacy compatibility fork** maintained for the A
 
 ## 📥 Installation
 
-1. Install **Slimefun Legacy** on a Paper/Purpur 26.2+ server.
+1. Install **Slimefun Legacy** on a Paper/Purpur 26.2+ server running Java 25.
 2. Download the latest `SF_MilitaryArsenal_Legacy_v1.x.x.jar` from this repository's Actions or Releases.
 3. Place the JAR in the server's `plugins/` directory.
-4. Optionally install a compatible **Networks** build for the recipe integration bridge.
+4. Optionally install a compatible **Networks** build; no additional bridge plugin or configuration is required.
 5. Restart the server fully.
 
 No separate Dough, Drake Slimefun6, IE1, or IE2 plugin is required by this Legacy build.
 
 ## 🛠️ Building
 
+Build with JDK 25:
+
 ```bash
 mvn -B -Dmaven.test.skip=true clean package
 ```
 
-The finished JAR is written to `target/SF_MilitaryArsenal_Legacy_v1.0.0.jar`. GitHub Actions also publishes the same JAR directly rather than wrapping it in an artifact ZIP.
+The finished JAR is written to `target/SF_MilitaryArsenal_Legacy_v1.0.0.jar`. GitHub Actions publishes the same JAR directly and tagged builds attach the raw JAR to the GitHub Release.
 
 ## 📜 License & attribution
 
