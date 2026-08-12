@@ -47,7 +47,12 @@ jobs:
           grep -Fq 'main: com.Chagui68.weaponsaddon.LegacyWeaponsAddon' src/main/resources/plugin.yml
           grep -Fq "api-version: '26.2'" src/main/resources/plugin.yml
           grep -Fq 'depend: [Slimefun]' src/main/resources/plugin.yml
-          grep -Fq 'softdepend: [Networks]' src/main/resources/plugin.yml
+          grep -Fq 'loadbefore: [Networks]' src/main/resources/plugin.yml
+
+          if grep -Fq 'softdepend: [Networks]' src/main/resources/plugin.yml; then
+            echo 'Military Arsenal must load before Networks so Networks can discover its Slimefun recipes.'
+            exit 1
+          fi
 
           if grep -Fq 'com.github.drakescraft_labs:slimefun-core' pom.xml; then
             echo 'The Legacy build must not depend on a locally-installed Drake artifact.'
@@ -93,13 +98,19 @@ jobs:
           sha256sum "$OUTPUT"
           jar tf "$OUTPUT" | grep -Fq 'plugin.yml'
           jar tf "$OUTPUT" | grep -Fq 'com/Chagui68/weaponsaddon/LegacyWeaponsAddon.class'
+          if jar tf "$OUTPUT" | grep -Fq 'LegacyNetworksIntegration.class'; then
+            echo 'Obsolete Networks reflection bridge was packaged in the JAR.'
+            exit 1
+          fi
           unzip -p "$OUTPUT" plugin.yml | grep -Fq "version: '${LEGACY_ARTIFACT_VERSION}'"
           unzip -p "$OUTPUT" plugin.yml | grep -Fq "api-version: '26.2'"
           unzip -p "$OUTPUT" plugin.yml | grep -Fq 'main: com.Chagui68.weaponsaddon.LegacyWeaponsAddon'
+          unzip -p "$OUTPUT" plugin.yml | grep -Fq 'loadbefore: [Networks]'
 
       - name: Upload direct versioned Legacy JAR
         uses: actions/upload-artifact@v7
         with:
+          name: SF_MilitaryArsenal_Legacy_v${{ env.LEGACY_ARTIFACT_VERSION }}.jar
           path: dist/SF_MilitaryArsenal_Legacy_v${{ env.LEGACY_ARTIFACT_VERSION }}.jar
           archive: false
           if-no-files-found: error
