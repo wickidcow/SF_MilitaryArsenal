@@ -31,33 +31,24 @@
     </repositories>
 
     <dependencies>
-        <!-- Paper 26.2 API. CI builds with JDK 25 while retaining Java 21 bytecode. -->
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
             <version>${paper.version}</version>
             <scope>provided</scope>
         </dependency>
-
-        <!--
-            Compile against the public Slimefun4 API surface used by Slimefun Legacy.
-            Slimefun itself is provided by the server and is never bundled into this addon.
-        -->
         <dependency>
             <groupId>${slimefun.groupId}</groupId>
             <artifactId>${slimefun.artifactId}</artifactId>
             <version>${slimefun.version}</version>
             <scope>provided</scope>
         </dependency>
-
-        <!-- Paper exposes JOML at runtime; this declaration keeps display-entity code explicit. -->
         <dependency>
             <groupId>org.joml</groupId>
             <artifactId>joml</artifactId>
             <version>1.10.8</version>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
@@ -69,13 +60,6 @@
     <build>
         <defaultGoal>clean package</defaultGoal>
         <finalName>SF_MilitaryArsenal_Legacy_v${project.version}</finalName>
-
-        <!--
-            Upstream 2.4.8 moved its source imports to the Drake Slimefun6 namespace.
-            The Legacy fork intentionally keeps upstream source easy to sync, then prepares a
-            generated compile tree that maps the Drake namespace/API names onto the established
-            Slimefun Legacy and Paper 26.2 API surfaces.
-        -->
         <sourceDirectory>${legacy.source.dir}</sourceDirectory>
 
         <resources>
@@ -104,9 +88,7 @@
                     <execution>
                         <id>prepare-slimefun-legacy-sources</id>
                         <phase>generate-sources</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
+                        <goals><goal>run</goal></goals>
                         <configuration>
                             <target>
                                 <delete dir="${legacy.source.dir}"/>
@@ -114,47 +96,29 @@
                                     <fileset dir="${project.basedir}/src/main/java" includes="**/*.java"/>
                                 </copy>
 
-                                <!-- Drake Slimefun6 namespace -> Slimefun Legacy namespace. -->
-                                <replaceregexp
-                                        match="com\.github\.drakescraft_labs\.slimefun4"
-                                        replace="io.github.thebusybiscuit.slimefun4"
-                                        byline="true">
+                                <replaceregexp match="com\.github\.drakescraft_labs\.slimefun4"
+                                               replace="io.github.thebusybiscuit.slimefun4" byline="true">
                                     <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
                                 </replaceregexp>
 
-                                <!-- BlockTicker intentionally remains in Slimefun's legacy API package. -->
-                                <replaceregexp
-                                        match="io\.github\.thebusybiscuit\.slimefun4\.legacy\.Objects\.handlers\.BlockTicker"
-                                        replace="me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker"
-                                        byline="true">
+                                <replaceregexp match="io\.github\.thebusybiscuit\.slimefun4\.legacy\.Objects\.handlers\.BlockTicker"
+                                               replace="me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker" byline="true">
                                     <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
                                 </replaceregexp>
 
-                                <!-- Paper 26.2 removed the GENERIC_ prefix from Bukkit attribute constants. -->
-                                <replaceregexp
-                                        match="Attribute\.GENERIC_"
-                                        replace="Attribute."
-                                        byline="true">
+                                <replaceregexp match="Attribute\.GENERIC_" replace="Attribute." byline="true">
                                     <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
                                 </replaceregexp>
 
-                                <!-- Minecraft/Paper 26.2 renamed the former generic chain material to IRON_CHAIN. -->
-                                <replaceregexp
-                                        match="Material\.CHAIN"
-                                        replace="Material.IRON_CHAIN"
-                                        byline="true">
+                                <replaceregexp match="Material\.CHAIN" replace="Material.IRON_CHAIN" byline="true">
                                     <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
                                 </replaceregexp>
 
-                                <!-- CHUNK_GEN is no longer fired in Paper 26.2 and is scheduled for removal. -->
-                                <replaceregexp
-                                        match="^\s*e\.getSpawnReason\(\) != CreatureSpawnEvent\.SpawnReason\.CHUNK_GEN &amp;&amp;\s*$"
-                                        replace=""
-                                        byline="true">
+                                <replaceregexp match="^\s*e\.getSpawnReason\(\) != CreatureSpawnEvent\.SpawnReason\.CHUNK_GEN &amp;&amp;\s*$"
+                                               replace="" byline="true">
                                     <fileset dir="${legacy.source.dir}" includes="**/MilitaryMobHandler.java"/>
                                 </replaceregexp>
 
-                                <!-- Modern Paper attribute modifiers are identified by NamespacedKey, not random UUIDs. -->
                                 <replaceregexp
                                         match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;Toughness&quot;\s*,\s*([^,\r\n]+)\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HEAD\s*\)"
                                         replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;toughness&quot;), \1, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD)"
@@ -176,10 +140,10 @@
                                     <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
                                 </replaceregexp>
 
-                                <!-- Catch the three multiline layouts that the general rewrite intentionally leaves explicit. -->
+                                <!-- Target the King's Sword assignment as a complete multiline block. -->
                                 <replaceregexp
-                                        match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;military_damage&quot;\s*,\s*15\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HAND\s*\)"
-                                        replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;military_damage&quot;), 15, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND)"
+                                        match="(?s)AttributeModifier sword_damage = new AttributeModifier\(.*?EquipmentSlot\.HAND\);"
+                                        replace="AttributeModifier sword_damage = new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;military_damage&quot;), 15, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND);"
                                         byline="false">
                                     <fileset dir="${legacy.source.dir}" includes="**/MilitaryMobHandler.java"/>
                                 </replaceregexp>
@@ -198,11 +162,8 @@
                                     <fileset dir="${legacy.source.dir}" includes="**/UpgradeTableHandler.java"/>
                                 </replaceregexp>
 
-                                <!-- Modern modifiers expose their stable identity through the namespaced key. -->
-                                <replaceregexp
-                                        match="mod\.getName\(\)\.startsWith\(namePrefix\)"
-                                        replace="mod.getKey().getKey().startsWith(namePrefix)"
-                                        byline="true">
+                                <replaceregexp match="mod\.getName\(\)\.startsWith\(namePrefix\)"
+                                               replace="mod.getKey().getKey().startsWith(namePrefix)" byline="true">
                                     <fileset dir="${legacy.source.dir}" includes="**/UpgradeTableHandler.java"/>
                                 </replaceregexp>
                             </target>
