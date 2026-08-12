@@ -1,75 +1,95 @@
-# ⚔️ WeaponsAddon - Military Arsenal for Slimefun
+# ⚔️ Military Arsenal Legacy
 
-[![Minecraft Version](https://img.shields.io/badge/Minecraft-1.20.6-brightgreen.svg)](https://www.spigotmc.org/)
-[![Slimefun](https://img.shields.io/badge/Slimefun4-RC--37-blue.svg)](https://github.com/Slimefun/Slimefun4)
-[![Java Version](https://img.shields.io/badge/Java-21-orange.svg)](https://www.java.com/)
+[![Paper](https://img.shields.io/badge/Paper%20%2F%20Purpur-26.2%2B-blue)](https://papermc.io/)
+[![Java](https://img.shields.io/badge/Java-21%2B-orange)](https://adoptium.net/)
+[![Slimefun Legacy](https://img.shields.io/badge/Slimefun-Legacy-brightgreen)](https://github.com/wickidcow/Slimefun-Legacy)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-A military weapons addon for Slimefun4 featuring advanced weaponry, ammunition systems, and coordinate-based bombardment capabilities.
+Military Arsenal is a combat-focused Slimefun addon with military weapons, ammunition, workbenches, war machines, defensive turrets, bosses, upgrade systems, Void/antimatter progression, and coordinate-based bombardment.
 
----
+This repository is a **Slimefun Legacy compatibility fork** maintained for the AlbionMC.com server environment. It preserves the gameplay work of the original project while keeping the addon usable on the current Paper/Purpur 26.2 platform and the Slimefun Legacy API surface.
+
+> **Original project:** [Chagui68/Military-Arsenal-addon-for-Slimefun4](https://github.com/Chagui68/Military-Arsenal-addon-for-Slimefun4)  
+> **Original developer:** Chagui68  
+> Please give the original project and developer credit for creating Military Arsenal.
+
+## 🧰 Legacy compatibility
+
+- Paper / Purpur **26.2+** target
+- Java **21+** bytecode; CI builds with Java 25
+- **Slimefun Legacy** is the required runtime dependency
+- Preserves the upstream 2.4.8 turret and structure overhaul
+- Replaces the upstream Drake-only compile dependency with the public Slimefun4-compatible API surface used by Slimefun Legacy
+- Keeps upstream source easy to synchronize by preparing a Legacy-compatible generated source tree during Maven builds
+- Direct, versioned GitHub Actions JAR output: `SF_MilitaryArsenal_Legacy_v1.0.0.jar`
+
+### Optional addon integration
+
+**Networks** is optional. If a compatible Networks build is present, Military Arsenal attempts to register compatible recipes through a reflection-based bridge. If the Networks API is unavailable or changes, Military Arsenal continues loading without that bridge.
+
+**Infinity Expansion / IE1 is not a dependency of Military Arsenal. IE2 is therefore not required.** The Void and antimatter progression in this addon belongs to Military Arsenal itself and does not use Infinity Expansion item IDs.
+
+## 📦 Requirements
+
+| Requirement | Status |
+|---|---|
+| Slimefun Legacy | **Required** |
+| Paper or Purpur 26.2+ | **Required / supported target** |
+| Java 21+ | **Required** |
+| Networks | Optional integration |
+| Infinity Expansion / IE1 | Not required |
+| Infinity Expansion 2 / IE2 | Not required |
+| Folia | Not declared supported |
 
 ## 🚀 Features
 
-### ⚔️ Machine Gun
-- Automatic rapid-fire weapon
-- 5-shot burst mode
-- 5 HP damage per shot (25 HP total per burst)
-- 0.5 second cooldown between bursts
-- Requires Machine Gun Bullets ammunition
-- **Unbreakable** - Never breaks from use
-- Realistic particle effects and sounds
+### 🔫 Weapons & ammunition
+- Machine Gun with dedicated ammunition and burst-fire combat
+- Antimatter Rifle and late-game combat progression
+- Military components and tiered crafting materials
+- Weapon Upgrade Table and upgrade modules
 
-### 💣 Bombardment Terminal
-- GPS coordinate-based airstrike system
-- Requires 2,000,000 J energy per attack
-- Consumes 10 TNT + 5 Nether Stars per strike
-- 2 waves × 4 TNT bombs per attack
-- 10-block radius area of effect
-- Interactive GUI with energy display
-- 4,000,000 J energy capacity
+### 🛡️ Defensive systems
+- Attack, Sniper, Melee, and Machine Gun turrets
+- Mountable turret / war-machine systems
+- Multi-level turret structures and upgrades
+- Spawn Negator for military-entity control
 
-### ⚙️ Military Components
-Progressive crafting system with 6 unique components:
+### 💣 War machines
+- Bombardment Terminal with coordinate-targeted strikes
+- Military Crafting Table
+- Military Machine Fabricator
+- Ammunition Workshop
+- Antimatter Pedestal and Ritual progression
 
-- **Military Circuit** (Tier 1) - Base component for all military items
-- **Guidance Chip** (Tier 2) - GPS coordinate processor
-- **Targeting System** (Tier 2) - Advanced aim assistance
-- **Reinforced Frame** (Tier 2) - Military-grade structural plating
-- **Quantum Processor** (Tier 3) - Advanced computing core
-- **Explosive Core** (Tier 3) - Stabilized explosive payload
+### ☠️ Encounters & progression
+- Military bosses and custom mob behavior
+- Boss reward systems
+- Vouchers
+- Void armor and antimatter materials
 
-### 🎯 Machine Gun Bullets
-- Craftable ammunition for Machine Gun
-- 5 bullets per craft
-- Stackable up to 64
-- Auto-consumed when firing
+## 📥 Installation
 
----
+1. Install **Slimefun Legacy** on a Paper/Purpur 26.2+ server.
+2. Download the latest `SF_MilitaryArsenal_Legacy_v1.x.x.jar` from this repository's Actions or Releases.
+3. Place the JAR in the server's `plugins/` directory.
+4. Optionally install a compatible **Networks** build for the recipe integration bridge.
+5. Restart the server fully.
 
-## 📋 Requirements
+No separate Dough, Drake Slimefun6, IE1, or IE2 plugin is required by this Legacy build.
 
-### Server
-- **Minecraft**: 1.20.6
-- **Server Software**: Spigot or Paper 1.20.6
-- **Java**: 17 or higher
-- **Slimefun4**: RC-37 or newer
+## 🛠️ Building
 
----
+```bash
+mvn -B -Dmaven.test.skip=true clean package
+```
 
-## 📦 Installation
+The finished JAR is written to `target/SF_MilitaryArsenal_Legacy_v1.0.0.jar`. GitHub Actions also publishes the same JAR directly rather than wrapping it in an artifact ZIP.
 
-### For Server Administrators
+## 📜 License & attribution
 
-1. **Install Slimefun4**
-   - Download from [Slimefun4 Builds](https://blob.build/project/Slimefun4)
-   - Place in `/plugins/` folder
+Military Arsenal remains distributed under the **GNU General Public License v3.0** included in this repository. This fork does not remove or replace the original project's licensing or attribution.
 
-2. **Install WeaponsAddon**
-   - Download the latest `.jar` from releases
-   - Place in `/plugins/` folder
+Minecraft is a trademark of Microsoft/Mojang. This project is an independent community addon and is **not affiliated with, endorsed by, or sponsored by Microsoft or Mojang**. Slimefun and other referenced projects belong to their respective authors and maintainers.
 
-3. **Restart Server**
-   ```bash
-   stop
-   # Wait for complete shutdown
-   # Start server again
+The Slimefun Legacy compatibility work in this fork is maintained for **AlbionMC.com**.
