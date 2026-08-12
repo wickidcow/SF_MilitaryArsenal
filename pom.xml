@@ -176,6 +176,28 @@
                                     <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
                                 </replaceregexp>
 
+                                <!-- Catch the three multiline layouts that the general rewrite intentionally leaves explicit. -->
+                                <replaceregexp
+                                        match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;military_damage&quot;\s*,\s*15\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HAND\s*\)"
+                                        replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;military_damage&quot;), 15, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND)"
+                                        byline="false">
+                                    <fileset dir="${legacy.source.dir}" includes="**/MilitaryMobHandler.java"/>
+                                </replaceregexp>
+
+                                <replaceregexp
+                                        match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;knockback&quot;\s*,\s*5\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HAND\s*\)"
+                                        replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;knockback&quot;), 5, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND)"
+                                        byline="false">
+                                    <fileset dir="${legacy.source.dir}" includes="**/MilitaryMobHandler.java"/>
+                                </replaceregexp>
+
+                                <replaceregexp
+                                        match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;military_speed&quot;\s*,\s*baseSpdModifier\s*\+\s*spdBonus\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HAND\s*\)"
+                                        replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;military_speed&quot;), baseSpdModifier + spdBonus, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND)"
+                                        byline="false">
+                                    <fileset dir="${legacy.source.dir}" includes="**/UpgradeTableHandler.java"/>
+                                </replaceregexp>
+
                                 <!-- Modern modifiers expose their stable identity through the namespaced key. -->
                                 <replaceregexp
                                         match="mod\.getName\(\)\.startsWith\(namePrefix\)"
