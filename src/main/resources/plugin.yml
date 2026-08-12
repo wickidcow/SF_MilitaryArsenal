@@ -1,19 +1,20 @@
 name: WeaponsAddon
 version: '${project.version}'
-main: com.Chagui68.weaponsaddon.WeaponsAddon
-api-version: 1.21
-depend: [ Slimefun ]
+main: com.Chagui68.weaponsaddon.LegacyWeaponsAddon
+api-version: '26.2'
+depend: [Slimefun]
+softdepend: [Networks]
 author: Chagui68
-description: Military weapons and machines addon for Slimefun
+description: Military Arsenal for Slimefun Legacy on Paper/Purpur 26.2+
 
 commands:
   weapons:
-    description: Main command for WeaponsAddon
+    description: Main command for Military Arsenal
     usage: /weapons <delete|summon|give> <args>
     permission: militaryarsenal.admin
     permission-message: You don't have permission to use this command!
 
 permissions:
   militaryarsenal.admin:
-    description: Access to admin commands
+    description: Access to Military Arsenal admin commands
     default: op
