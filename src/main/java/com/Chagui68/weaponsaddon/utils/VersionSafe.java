@@ -1,41 +1,38 @@
 package com.Chagui68.weaponsaddon.utils;
 
 import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
+import org.bukkit.Registry;
+import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
 import org.bukkit.potion.PotionEffectType;
+
+import java.util.Locale;
 
 public class VersionSafe {
 
     /**
-     * Safely gets an Attribute by its name.
-     * Handles attributes introduced in 1.20.5+ (SCALE, STEP_HEIGHT, etc.)
+     * Resolves legacy enum-style attribute names through Paper's modern attribute registry.
+     * Paper 26.2 removed the GENERIC_ prefix from the Java constants and schedules the old
+     * values()/name() compatibility surface for removal, so registry keys are the stable path.
      */
     public static Attribute getAttribute(String name) {
-        if (name == null)
+        if (name == null || name.isBlank()) {
             return null;
+        }
+
         try {
-            // Check if the enum constant exists before calling valueOf to be safe
-            for (Attribute attr : Attribute.values()) {
-                if (attr.name().equals(name)) {
-                    return attr;
-                }
+            String key = name.toLowerCase(Locale.ROOT);
+            if (key.startsWith("generic_")) {
+                key = key.substring("generic_".length());
             }
-
-            // Legacy fallbacks
-            if (name.equals("GENERIC_JUMP_STRENGTH")) {
-                for (Attribute attr : Attribute.values()) {
-                    if (attr.name().equals("HORSE_JUMP_STRENGTH")) {
-                        return attr;
-                    }
-                }
+            if (key.equals("horse_jump_strength")) {
+                key = "jump_strength";
             }
-
-            return null;
-        } catch (Exception e) {
+            return Registry.ATTRIBUTE.get(NamespacedKey.minecraft(key));
+        } catch (IllegalArgumentException ex) {
             return null;
         }
     }
@@ -55,18 +52,17 @@ public class VersionSafe {
      * Safely gets an Enchantment by a key that is valid across versions.
      */
     public static Enchantment getEnchantment(String key) {
-        // First try by NamespacedKey (Internal name, usually consistent)
         try {
-            Enchantment ench = Enchantment.getByKey(NamespacedKey.minecraft(key.toLowerCase()));
-            if (ench != null)
+            Enchantment ench = Enchantment.getByKey(NamespacedKey.minecraft(key.toLowerCase(Locale.ROOT)));
+            if (ench != null) {
                 return ench;
-        } catch (NoClassDefFoundError | NoSuchMethodError e) {
-            // NamespacedKey might be different or getByKey might fail on very old versions
+            }
+        } catch (NoClassDefFoundError | NoSuchMethodError ignored) {
+            // Retain the original fallback behavior for older Slimefun-compatible environments.
         }
 
-        // Fallback for older versions or specific mappings
         String name = null;
-        switch (key.toLowerCase()) {
+        switch (key.toLowerCase(Locale.ROOT)) {
             case "sharpness":
                 name = "DAMAGE_ALL";
                 break;
@@ -106,12 +102,14 @@ public class VersionSafe {
             case "bane_of_arthropods":
                 name = "DAMAGE_ARTHROPODS";
                 break;
+            default:
+                break;
         }
 
         if (name != null) {
             try {
                 return Enchantment.getByName(name);
-            } catch (Exception e) {
+            } catch (Exception ignored) {
                 return null;
             }
         }
@@ -120,8 +118,7 @@ public class VersionSafe {
     }
 
     /**
-     * Safely gets a Particle by name.
-     * Handles 1.20.5+ renames.
+     * Safely gets a Particle by name and retains the upstream legacy aliases.
      */
     public static Particle getParticle(String name) {
         try {
@@ -142,112 +139,100 @@ public class VersionSafe {
                     return Particle.valueOf("HUGE_EXPLOSION");
                 if (name.equals("WITCH"))
                     return Particle.valueOf("SPELL_WITCH");
-            } catch (IllegalArgumentException e2) {
-                // Ignore
+            } catch (IllegalArgumentException ignored) {
+                // Ignore unavailable aliases.
             }
             return null;
         }
     }
 
     /**
-     * Safely gets a Sound by name.
-     * Handles 1.20.5+ rename of FIREWORK_ROCKET to FIREWORK.
+     * Resolves Bukkit Sound constants without using the OldEnum valueOf compatibility method,
+     * which Paper 26.2 schedules for removal.
      */
     public static Sound getSound(String name) {
-        try {
-            return Sound.valueOf(name);
-        } catch (IllegalArgumentException e1) {
-            try {
-                if (name.contains("FIREWORK_ROCKET")) {
-                    return Sound.valueOf(name.replace("FIREWORK_ROCKET", "FIREWORK"));
-                }
-                if (name.equals("BLOCK_NOTE_BLOCK_HAT"))
-                    return Sound.valueOf("BLOCK_NOTE_HAT");
-            } catch (IllegalArgumentException e2) {
-                // Ignore
+        Sound sound = getSoundConstant(name);
+        if (sound != null) {
+            return sound;
+        }
+
+        if (name.contains("FIREWORK_ROCKET")) {
+            sound = getSoundConstant(name.replace("FIREWORK_ROCKET", "FIREWORK"));
+            if (sound != null) {
+                return sound;
             }
+        }
+
+        if (name.equals("BLOCK_NOTE_BLOCK_HAT")) {
+            return getSoundConstant("BLOCK_NOTE_HAT");
+        }
+
+        return null;
+    }
+
+    private static Sound getSoundConstant(String name) {
+        try {
+            Object value = Sound.class.getField(name).get(null);
+            return value instanceof Sound sound ? sound : null;
+        } catch (ReflectiveOperationException | SecurityException ignored) {
             return null;
         }
     }
 
     /**
      * Safely gets a PotionEffectType by name.
-     * Handles 1.20.5+ renames (SLOWNESS -> SLOW, etc.)
      */
     @SuppressWarnings("deprecation")
     public static PotionEffectType getPotionEffectType(String name) {
         try {
-            // Try modern name first (1.20.5+)
             PotionEffectType type = PotionEffectType.getByName(name);
-            if (type != null) return type;
+            if (type != null)
+                return type;
 
-            // Fallbacks for legacy versions
-            if (name.equalsIgnoreCase("SLOWNESS")) {
+            if (name.equalsIgnoreCase("SLOWNESS"))
                 return PotionEffectType.getByName("SLOW");
-            }
-            if (name.equalsIgnoreCase("MINING_FATIGUE")) {
+            if (name.equalsIgnoreCase("MINING_FATIGUE"))
                 return PotionEffectType.getByName("SLOW_DIGGING");
-            }
-            if (name.equalsIgnoreCase("HASTE")) {
+            if (name.equalsIgnoreCase("HASTE"))
                 return PotionEffectType.getByName("FAST_DIGGING");
-            }
-            if (name.equalsIgnoreCase("STRENGTH")) {
+            if (name.equalsIgnoreCase("STRENGTH"))
                 return PotionEffectType.getByName("INCREASE_DAMAGE");
-            }
-            if (name.equalsIgnoreCase("INSTANT_HEALTH")) {
+            if (name.equalsIgnoreCase("INSTANT_HEALTH"))
                 return PotionEffectType.getByName("HEAL");
-            }
-            if (name.equalsIgnoreCase("INSTANT_DAMAGE")) {
+            if (name.equalsIgnoreCase("INSTANT_DAMAGE"))
                 return PotionEffectType.getByName("HARM");
-            }
-            if (name.equalsIgnoreCase("NAUSEA")) {
+            if (name.equalsIgnoreCase("NAUSEA"))
                 return PotionEffectType.getByName("CONFUSION");
-            }
-            if (name.equalsIgnoreCase("RESISTANCE")) {
+            if (name.equalsIgnoreCase("RESISTANCE"))
                 return PotionEffectType.getByName("DAMAGE_RESISTANCE");
-            }
-            if (name.equalsIgnoreCase("SPEED")) {
-                return PotionEffectType.getByName("SPEED"); // Stable, but safe to check
-            }
-            if (name.equalsIgnoreCase("FIRE_RESISTANCE")) {
+            if (name.equalsIgnoreCase("SPEED"))
+                return PotionEffectType.getByName("SPEED");
+            if (name.equalsIgnoreCase("FIRE_RESISTANCE"))
                 return PotionEffectType.getByName("FIRE_RESISTANCE");
-            }
-            if (name.equalsIgnoreCase("JUMP_BOOST")) {
+            if (name.equalsIgnoreCase("JUMP_BOOST"))
                 return PotionEffectType.getByName("JUMP");
-            }
-            if (name.equalsIgnoreCase("NIGHT_VISION")) {
+            if (name.equalsIgnoreCase("NIGHT_VISION"))
                 return PotionEffectType.getByName("NIGHT_VISION");
-            }
-            if (name.equalsIgnoreCase("ABSORPTION")) {
+            if (name.equalsIgnoreCase("ABSORPTION"))
                 return PotionEffectType.getByName("ABSORPTION");
-            }
-            if (name.equalsIgnoreCase("SATURATION")) {
+            if (name.equalsIgnoreCase("SATURATION"))
                 return PotionEffectType.getByName("SATURATION");
-            }
-            if (name.equalsIgnoreCase("LEVITATION")) {
+            if (name.equalsIgnoreCase("LEVITATION"))
                 return PotionEffectType.getByName("LEVITATION");
-            }
-            if (name.equalsIgnoreCase("GLOWING")) {
+            if (name.equalsIgnoreCase("GLOWING"))
                 return PotionEffectType.getByName("GLOWING");
-            }
-            if (name.equalsIgnoreCase("WITHER")) {
+            if (name.equalsIgnoreCase("WITHER"))
                 return PotionEffectType.getByName("WITHER");
-            }
-            if (name.equalsIgnoreCase("HUNGER")) {
+            if (name.equalsIgnoreCase("HUNGER"))
                 return PotionEffectType.getByName("HUNGER");
-            }
-            if (name.equalsIgnoreCase("WEAKNESS")) {
+            if (name.equalsIgnoreCase("WEAKNESS"))
                 return PotionEffectType.getByName("WEAKNESS");
-            }
-            if (name.equalsIgnoreCase("DARKNESS")) {
+            if (name.equalsIgnoreCase("DARKNESS"))
                 return PotionEffectType.getByName("DARKNESS");
-            }
 
             return null;
-        } catch (Exception e) {
+        } catch (Exception ignored) {
             return null;
         }
     }
 }
-
-
