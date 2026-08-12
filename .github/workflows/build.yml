@@ -62,7 +62,7 @@ jobs:
           echo 'Legacy metadata checks passed.'
 
       - name: Build Military Arsenal
-        run: mvn -B -Dmaven.test.skip=true clean package --file pom.xml
+        run: mvn -B -e -Dmaven.test.skip=true clean package --file pom.xml
 
       - name: Verify generated Legacy source namespace
         shell: bash
