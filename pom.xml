@@ -145,6 +145,44 @@
                                         byline="true">
                                     <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
                                 </replaceregexp>
+
+                                <!-- CHUNK_GEN is no longer fired in Paper 26.2 and is scheduled for removal. -->
+                                <replaceregexp
+                                        match="^\s*e\.getSpawnReason\(\) != CreatureSpawnEvent\.SpawnReason\.CHUNK_GEN &amp;&amp;\s*$"
+                                        replace=""
+                                        byline="true">
+                                    <fileset dir="${legacy.source.dir}" includes="**/MilitaryMobHandler.java"/>
+                                </replaceregexp>
+
+                                <!-- Modern Paper attribute modifiers are identified by NamespacedKey, not random UUIDs. -->
+                                <replaceregexp
+                                        match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;Toughness&quot;\s*,\s*([^,\r\n]+)\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HEAD\s*\)"
+                                        replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;toughness&quot;), \1, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD)"
+                                        byline="false">
+                                    <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
+                                </replaceregexp>
+
+                                <replaceregexp
+                                        match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;([^&quot;]+)&quot;\s*,\s*([^,\r\n]+)\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HEAD\s*\)"
+                                        replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;\1&quot;), \2, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD)"
+                                        byline="false">
+                                    <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
+                                </replaceregexp>
+
+                                <replaceregexp
+                                        match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;([^&quot;]+)&quot;\s*,\s*([^,\r\n]+)\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HAND\s*\)"
+                                        replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;\1&quot;), \2, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND)"
+                                        byline="false">
+                                    <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
+                                </replaceregexp>
+
+                                <!-- Modern modifiers expose their stable identity through the namespaced key. -->
+                                <replaceregexp
+                                        match="mod\.getName\(\)\.startsWith\(namePrefix\)"
+                                        replace="mod.getKey().getKey().startsWith(namePrefix)"
+                                        byline="true">
+                                    <fileset dir="${legacy.source.dir}" includes="**/UpgradeTableHandler.java"/>
+                                </replaceregexp>
                             </target>
                         </configuration>
                     </execution>
@@ -160,6 +198,8 @@
                     <encoding>UTF-8</encoding>
                     <proc>none</proc>
                     <fork>true</fork>
+                    <showWarnings>true</showWarnings>
+                    <failOnWarning>true</failOnWarning>
                 </configuration>
             </plugin>
         </plugins>
