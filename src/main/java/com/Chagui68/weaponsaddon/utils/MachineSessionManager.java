@@ -2,7 +2,6 @@ package com.Chagui68.weaponsaddon.utils;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -29,17 +28,18 @@ public final class MachineSessionManager implements Listener {
         String key = key(location);
         UUID playerId = player.getUniqueId();
         UUID owner = MACHINE_OWNERS.get(key);
+        String currentMachine = PLAYER_MACHINES.get(playerId);
 
         if (owner != null && !owner.equals(playerId)) {
             return false;
         }
 
-        String previous = PLAYER_MACHINES.put(playerId, key);
-        if (previous != null && !previous.equals(key)) {
-            MACHINE_OWNERS.remove(previous, playerId);
+        if (currentMachine != null && !currentMachine.equals(key)) {
+            return false;
         }
 
         MACHINE_OWNERS.put(key, playerId);
+        PLAYER_MACHINES.put(playerId, key);
         return true;
     }
 
