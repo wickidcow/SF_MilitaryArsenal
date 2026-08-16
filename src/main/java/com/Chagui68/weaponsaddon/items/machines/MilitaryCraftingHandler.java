@@ -124,8 +124,7 @@ public class MilitaryCraftingHandler implements Listener {
             return;
 
         try {
-            SlimefunItem sfItem = BlockStorage.check(blockLoc);
-            if (sfItem == null || !MACHINE_ID.equals(sfItem.getId())) {
+            if (!BlockStorage.check(blockLoc, MACHINE_ID)) {
                 return;
             }
 
