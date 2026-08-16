@@ -43,6 +43,7 @@ Version **1.1.0** combines Chagui68's latest upstream adaptations with a focused
 - Melee turret displayed damage now matches its real **50 HP** attack
 - Melee attacks no longer consume power when the Guardian model cannot begin an attack, and overlapping attack animations are prevented
 - Chagui68's elite combat mob additions from PR #3 remain included
+- **Automatic Military Arsenal mob spawning is now disabled by default and must be explicitly enabled by the server owner**
 
 ## 🧰 Legacy compatibility
 
@@ -101,6 +102,37 @@ Version **1.1.0** combines Chagui68's latest upstream adaptations with a focused
 - Boss reward systems
 - Vouchers
 - Void armor and antimatter materials
+
+## 🧟 Custom mob spawning is opt-in
+
+**Automatic Military Arsenal mob conversions are disabled by default.** Installing the addon should not cause vanilla mobs to begin turning into Military Arsenal mobs unless the server owner intentionally enables them.
+
+The following automatic conversions ship with `spawn_chance: 0.0`:
+
+- Elite Ranger
+- Elite Killer
+- The King
+- Pusher
+- Battle Witch
+- Juan
+- Rusty Crab
+- Purple Guy
+
+To enable a specific mob, edit `plugins/WeaponsAddon/config.yml` and raise only that mob's `spawn_chance` above `0.0`.
+
+For example, to give Purple Guy a 5% conversion chance:
+
+```yaml
+mobs:
+  purple_guy:
+    spawn_chance: 0.05
+```
+
+`0.0` means disabled, `0.05` means 5%, `0.10` means 10%, and `1.0` means 100%.
+
+> **Upgrading an existing server:** Bukkit normally preserves an existing `plugins/WeaponsAddon/config.yml`. If an older installation already has non-zero spawn chances, change those values to `0.0` manually. The new safe defaults apply automatically to fresh/generated configs, not by overwriting an administrator's existing configuration.
+
+Manual boss systems, boss spawn eggs, weapons, armor, machines, turrets, crafting, and other non-random-spawn features remain available independently of these automatic mob conversion chances.
 
 ## 📥 Installation
 
