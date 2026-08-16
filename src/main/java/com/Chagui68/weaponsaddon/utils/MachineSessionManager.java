@@ -9,6 +9,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.HashMap;
@@ -18,6 +20,9 @@ import java.util.UUID;
 /**
  * Prevents copied virtual machine inventories from being opened by multiple
  * players at the same time or destroyed while a session is active.
+ *
+ * Also provides a second-line transaction guard for Military Arsenal's custom
+ * inventories so shift-click and drag operations cannot bypass slot rules.
  */
 public final class MachineSessionManager implements Listener {
 
@@ -83,9 +88,40 @@ public final class MachineSessionManager implements Listener {
         event.blockList().removeIf(block -> isLocked(block.getLocation()));
     }
 
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onProtectedInventoryClick(InventoryClickEvent event) {
+        if (!isProtectedInventoryTitle(event.getView().getTitle())) {
+            return;
+        }
+
+        if (event.isShiftClick()) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onProtectedInventoryDrag(InventoryDragEvent event) {
+        if (!isProtectedInventoryTitle(event.getView().getTitle())) {
+            return;
+        }
+
+        int topSize = event.getView().getTopInventory().getSize();
+        if (event.getRawSlots().stream().anyMatch(slot -> slot < topSize)) {
+            event.setCancelled(true);
+        }
+    }
+
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         release(event.getPlayer());
+    }
+
+    private static boolean isProtectedInventoryTitle(String title) {
+        return title.equals(ChatColor.DARK_GRAY + "Weapon Upgrade Table")
+                || title.equals(ChatColor.DARK_GRAY + "Ammunition Workshop")
+                || title.equals(ChatColor.DARK_RED + "Military Crafting Table")
+                || title.equals(ChatColor.DARK_RED + "Machine Fabricator")
+                || title.equals(ChatColor.DARK_RED + "Bombardment Terminal");
     }
 
     private static String key(Location location) {
