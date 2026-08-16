@@ -13,6 +13,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -81,25 +82,62 @@ public class AmmunitionWorkshopHandler implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
-        if (!(e.getWhoClicked() instanceof Player))
+        if (!(e.getWhoClicked() instanceof Player p))
             return;
         if (!e.getView().getTitle().equals(DARK_GRAY + "Ammunition Workshop"))
             return;
+
+        if (e.isShiftClick()) {
+            e.setCancelled(true);
+            return;
+        }
 
         int slot = e.getRawSlot();
         if (slot < 0 || slot >= e.getInventory().getSize())
             return;
 
+        if (slot == resultSlot) {
+            e.setCancelled(true);
+            takeResult(p, e.getInventory());
+            return;
+        }
+
         boolean isGrid = false;
-        for (int s : gridSlots)
-            if (s == slot)
+        for (int s : gridSlots) {
+            if (s == slot) {
                 isGrid = true;
+                break;
+            }
+        }
 
         if (slot == craftButtonSlot) {
             e.setCancelled(true);
             attemptCraft(e.getInventory());
-        } else if (slot != resultSlot && !isGrid) {
+        } else if (!isGrid) {
             e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent e) {
+        if (!e.getView().getTitle().equals(DARK_GRAY + "Ammunition Workshop"))
+            return;
+
+        int topSize = e.getView().getTopInventory().getSize();
+        if (e.getRawSlots().stream().anyMatch(slot -> slot < topSize)) {
+            e.setCancelled(true);
+        }
+    }
+
+    private void takeResult(Player p, Inventory inv) {
+        ItemStack result = inv.getItem(resultSlot);
+        if (result == null || result.getType() == Material.AIR)
+            return;
+
+        inv.setItem(resultSlot, null);
+        Map<Integer, ItemStack> leftovers = p.getInventory().addItem(result);
+        for (ItemStack leftover : leftovers.values()) {
+            p.getWorld().dropItemNaturally(p.getLocation(), leftover);
         }
     }
 
