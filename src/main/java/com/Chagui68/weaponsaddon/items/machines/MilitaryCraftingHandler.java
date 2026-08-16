@@ -8,11 +8,15 @@ import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -26,8 +30,17 @@ import static org.bukkit.Bukkit.createInventory;
 
 public class MilitaryCraftingHandler implements Listener {
 
+    private static final String MACHINE_ID = "MA_MILITARY_CRAFTING_TABLE";
     private static final Map<UUID, Location> openTables = new HashMap<>();
     private static final List<CustomRecipeItem> RECIPE_CACHE = new ArrayList<>();
+    private static final int[] GRID_SLOTS = {
+            11, 12, 13, 14,
+            20, 21, 22, 23,
+            29, 30, 31, 32,
+            38, 39, 40, 41
+    };
+    private static final int OUTPUT_SLOT = 34;
+    private static final int CRAFT_BUTTON = 49;
 
     public static void registerRecipe(CustomRecipeItem item) {
         RECIPE_CACHE.add(item);
@@ -59,22 +72,15 @@ public class MilitaryCraftingHandler implements Listener {
                 inv.setItem(slot, border);
             }
 
-            int[] gridSlots = {
-                    11, 12, 13, 14,
-                    20, 21, 22, 23,
-                    29, 30, 31, 32,
-                    38, 39, 40, 41
-            };
-
-            for (int i = 0; i < 16; i++) {
+            for (int i = 0; i < GRID_SLOTS.length; i++) {
                 String itemData = BlockStorage.getLocationInfo(blockLoc, "slot_" + i);
                 if (itemData != null && !itemData.isEmpty()) {
                     ItemStack item = deserializeItemStack(itemData);
                     if (item != null) {
-                        inv.setItem(gridSlots[i], item);
+                        inv.setItem(GRID_SLOTS[i], item);
                     }
                 } else {
-                    inv.setItem(gridSlots[i], null);
+                    inv.setItem(GRID_SLOTS[i], null);
                 }
             }
 
@@ -84,7 +90,7 @@ public class MilitaryCraftingHandler implements Listener {
                     ChatColor.GRAY + "Place items in 4×4 grid",
                     ChatColor.GRAY + "Click CRAFT button"));
 
-            inv.setItem(34, null);
+            inv.setItem(OUTPUT_SLOT, null);
 
             inv.setItem(53, new CustomItemStack(Material.SMITHING_TABLE,
                     ChatColor.GOLD + "⚒ Military Crafting Table",
@@ -95,7 +101,7 @@ public class MilitaryCraftingHandler implements Listener {
                     ChatColor.AQUA + "Grid: 16 slots (4×4)",
                     ChatColor.GREEN + "✓ Inventory persists"));
 
-            inv.setItem(49, new CustomItemStack(Material.CRAFTING_TABLE,
+            inv.setItem(CRAFT_BUTTON, new CustomItemStack(Material.CRAFTING_TABLE,
                     ChatColor.GREEN + "▶ CRAFT ◀",
                     "",
                     ChatColor.GRAY + "Click to craft item",
@@ -112,22 +118,22 @@ public class MilitaryCraftingHandler implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent e) {
-        if (!(e.getPlayer() instanceof Player))
+        if (!(e.getPlayer() instanceof Player p))
             return;
         if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Military Crafting Table"))
             return;
 
-        Player p = (Player) e.getPlayer();
         Location blockLoc = openTables.remove(p.getUniqueId());
         if (blockLoc == null)
             return;
 
         try {
-            int[] gridSlots = { 11, 12, 13, 14, 20, 21, 22, 23, 29, 30, 31, 32, 38, 39, 40, 41 };
             Inventory inv = e.getInventory();
+            returnItemToPlayer(p, inv.getItem(OUTPUT_SLOT));
+            inv.setItem(OUTPUT_SLOT, null);
 
-            for (int i = 0; i < 16; i++) {
-                ItemStack item = inv.getItem(gridSlots[i]);
+            for (int i = 0; i < GRID_SLOTS.length; i++) {
+                ItemStack item = inv.getItem(GRID_SLOTS[i]);
                 if (item != null && item.getType() != Material.AIR) {
                     BlockStorage.addBlockInfo(blockLoc, "slot_" + i, serializeItemStack(item));
                 } else {
@@ -141,17 +147,25 @@ public class MilitaryCraftingHandler implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
-        if (!(e.getWhoClicked() instanceof Player))
+        if (!(e.getWhoClicked() instanceof Player p))
             return;
         if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Military Crafting Table"))
             return;
 
-        Player p = (Player) e.getWhoClicked();
-        int slot = e.getRawSlot();
+        if (e.isShiftClick()) {
+            e.setCancelled(true);
+            return;
+        }
 
-        int[] allowedSlots = { 11, 12, 13, 14, 20, 21, 22, 23, 29, 30, 31, 32, 38, 39, 40, 41, 34 };
+        int slot = e.getRawSlot();
+        if (slot == OUTPUT_SLOT) {
+            e.setCancelled(true);
+            takeOutput(p, e.getInventory());
+            return;
+        }
+
         boolean allowed = false;
-        for (int s : allowedSlots) {
+        for (int s : GRID_SLOTS) {
             if (slot == s) {
                 allowed = true;
                 break;
@@ -162,52 +176,102 @@ public class MilitaryCraftingHandler implements Listener {
             e.setCancelled(true);
         }
 
-        if (slot == 49 && e.getCurrentItem() != null && e.getCurrentItem().getType() == Material.CRAFTING_TABLE) {
+        if (slot == CRAFT_BUTTON && e.getCurrentItem() != null
+                && e.getCurrentItem().getType() == Material.CRAFTING_TABLE) {
             e.setCancelled(true);
             attemptCraft(p, e.getInventory());
         }
     }
 
-    private static void attemptCraft(Player p, Inventory inv) {
-        int[] gridSlots = { 11, 12, 13, 14, 20, 21, 22, 23, 29, 30, 31, 32, 38, 39, 40, 41 };
-        ItemStack[] grid = new ItemStack[16];
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent e) {
+        if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Military Crafting Table"))
+            return;
 
-        for (int i = 0; i < 16; i++) {
-            grid[i] = inv.getItem(gridSlots[i]);
+        int topSize = e.getView().getTopInventory().getSize();
+        if (e.getRawSlots().stream().anyMatch(slot -> slot < topSize)) {
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent e) {
+        Block block = e.getBlock();
+        SlimefunItem sfItem = BlockStorage.check(block);
+        if (sfItem == null || !MACHINE_ID.equals(sfItem.getId())) {
+            return;
         }
 
-        System.out.println("=== CRAFTEO 4x4 ===");
-        System.out.println("Recipes: " + RECIPE_CACHE.size());
+        Location blockLoc = block.getLocation();
+        for (int i = 0; i < GRID_SLOTS.length; i++) {
+            String key = "slot_" + i;
+            String itemData = BlockStorage.getLocationInfo(blockLoc, key);
+            if (itemData != null && !itemData.isEmpty()) {
+                ItemStack item = deserializeItemStack(itemData);
+                if (item != null) {
+                    block.getWorld().dropItemNaturally(blockLoc, item);
+                }
+                BlockStorage.addBlockInfo(blockLoc, key, "");
+            }
+        }
+    }
+
+    private static void attemptCraft(Player p, Inventory inv) {
+        ItemStack existingOutput = inv.getItem(OUTPUT_SLOT);
+        if (existingOutput != null && existingOutput.getType() != Material.AIR) {
+            p.sendMessage(ChatColor.RED + "✗ Take the current result before crafting again.");
+            return;
+        }
+
+        ItemStack[] grid = new ItemStack[GRID_SLOTS.length];
+        for (int i = 0; i < GRID_SLOTS.length; i++) {
+            grid[i] = inv.getItem(GRID_SLOTS[i]);
+        }
 
         for (CustomRecipeItem customItem : RECIPE_CACHE) {
             if (customItem.getGridSize() != CustomRecipeItem.RecipeGridSize.GRID_4x4)
                 continue;
 
             ItemStack[] recipe = customItem.getFullRecipe();
-            System.out.println("Checkeando: " + customItem.getId());
-
             if (matchesRecipe(grid, recipe)) {
-                for (int i = 0; i < 16; i++) {
+                for (int i = 0; i < GRID_SLOTS.length; i++) {
                     ItemStack item = grid[i];
                     if (item != null && item.getType() != Material.AIR) {
                         item.setAmount(item.getAmount() - 1);
                         if (item.getAmount() <= 0) {
-                            inv.setItem(gridSlots[i], null);
+                            inv.setItem(GRID_SLOTS[i], null);
                         }
                     }
                 }
 
                 ItemStack output = customItem.getItem().clone();
-                inv.setItem(34, output);
+                inv.setItem(OUTPUT_SLOT, output);
                 p.sendMessage(ChatColor.GREEN + "✓ Crafted: " + ChatColor.WHITE
                         + ChatColor.stripColor(output.getItemMeta().getDisplayName()));
-                System.out.println("✓ CRAFTEO EXITOSO!");
                 return;
             }
         }
 
-        System.out.println("❌ Receta inválida");
         p.sendMessage(ChatColor.RED + "✗ Invalid recipe!");
+    }
+
+    private static void takeOutput(Player p, Inventory inv) {
+        ItemStack output = inv.getItem(OUTPUT_SLOT);
+        if (output == null || output.getType() == Material.AIR)
+            return;
+
+        inv.setItem(OUTPUT_SLOT, null);
+        returnItemToPlayer(p, output);
+    }
+
+    private static void returnItemToPlayer(Player p, ItemStack item) {
+        if (item == null || item.getType() == Material.AIR)
+            return;
+
+        Map<Integer, ItemStack> leftovers = p.getInventory().addItem(item);
+        for (ItemStack leftover : leftovers.values()) {
+            p.getWorld().dropItemNaturally(p.getLocation(), leftover);
+        }
     }
 
     private static boolean matchesRecipe(ItemStack[] grid, ItemStack[] recipe) {
