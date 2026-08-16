@@ -1,7 +1,7 @@
 package com.Chagui68.weaponsaddon.items.machines;
 
 import com.Chagui68.weaponsaddon.items.CustomRecipeItem;
-import com.Chagui68.weaponsaddon.utils.MachineSessionGuard;
+import com.Chagui68.weaponsaddon.utils.MachineSessionManager;
 import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItem;
 import com.github.drakescraft_labs.slimefun4.libraries.dough.items.CustomItemStack;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
@@ -29,17 +29,8 @@ import static org.bukkit.Bukkit.createInventory;
 
 public class MachineFabricatorHandler implements Listener {
 
-    private static final String MACHINE_ID = "MA_MILITARY_MACHINE_FABRICATOR";
     private static final Map<UUID, Location> openFabricators = new HashMap<>();
     private static final List<CustomRecipeItem> RECIPE_CACHE = new ArrayList<>();
-    private static final int[] GRID_SLOTS = {
-            1, 2, 3, 4, 5, 6,
-            10, 11, 12, 13, 14, 15,
-            19, 20, 21, 22, 23, 24,
-            28, 29, 30, 31, 32, 33,
-            37, 38, 39, 40, 41, 42,
-            46, 47, 48, 49, 50, 51
-    };
 
     public static void registerRecipe(CustomRecipeItem item) {
         RECIPE_CACHE.add(item);
@@ -51,7 +42,8 @@ public class MachineFabricatorHandler implements Listener {
     }
 
     private static void openFabricatorGUI(Player p, Location blockLoc) {
-        if (!MachineSessionGuard.acquire(blockLoc, p)) {
+        if (!MachineSessionManager.tryAcquire(p, blockLoc)) {
+            p.sendMessage(ChatColor.RED + "This machine is already in use. Close your current machine GUI and try again.");
             return;
         }
 
@@ -69,15 +61,24 @@ public class MachineFabricatorHandler implements Listener {
                 inv.setItem(slot, border);
             }
 
-            for (int i = 0; i < GRID_SLOTS.length; i++) {
+            int[] gridSlots = {
+                    1, 2, 3, 4, 5, 6,
+                    10, 11, 12, 13, 14, 15,
+                    19, 20, 21, 22, 23, 24,
+                    28, 29, 30, 31, 32, 33,
+                    37, 38, 39, 40, 41, 42,
+                    46, 47, 48, 49, 50, 51
+            };
+
+            for (int i = 0; i < 36; i++) {
                 String itemData = BlockStorage.getLocationInfo(blockLoc, "slot_" + i);
                 if (itemData != null && !itemData.isEmpty()) {
                     ItemStack item = deserializeItemStack(itemData);
                     if (item != null) {
-                        inv.setItem(GRID_SLOTS[i], item);
+                        inv.setItem(gridSlots[i], item);
                     }
                 } else {
-                    inv.setItem(GRID_SLOTS[i], null);
+                    inv.setItem(gridSlots[i], null);
                 }
             }
 
@@ -103,39 +104,42 @@ public class MachineFabricatorHandler implements Listener {
                     ChatColor.GRAY + "Click to craft machine",
                     ChatColor.YELLOW + "Recipe must match exactly"));
 
-            openFabricators.put(p.getUniqueId(), blockLoc.clone());
+            openFabricators.put(p.getUniqueId(), blockLoc);
             p.openInventory(inv);
         } catch (RuntimeException ex) {
             openFabricators.remove(p.getUniqueId());
-            MachineSessionGuard.release(blockLoc, p.getUniqueId());
+            MachineSessionManager.release(p);
             throw ex;
         }
     }
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent e) {
-        if (!(e.getPlayer() instanceof Player p))
+        if (!(e.getPlayer() instanceof Player))
             return;
         if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Machine Fabricator"))
             return;
 
+        Player p = (Player) e.getPlayer();
         Location blockLoc = openFabricators.remove(p.getUniqueId());
         if (blockLoc == null)
             return;
 
         try {
-            if (!BlockStorage.check(blockLoc, MACHINE_ID)) {
-                return;
-            }
-
+            int[] gridSlots = { 1, 2, 3, 4, 5, 6, 10, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 24,
+                    28, 29, 30, 31, 32, 33, 37, 38, 39, 40, 41, 42, 46, 47, 48, 49, 50, 51 };
             Inventory inv = e.getInventory();
-            for (int i = 0; i < GRID_SLOTS.length; i++) {
-                ItemStack item = inv.getItem(GRID_SLOTS[i]);
-                BlockStorage.addBlockInfo(blockLoc, "slot_" + i,
-                        item != null && item.getType() != Material.AIR ? serializeItemStack(item) : "");
+
+            for (int i = 0; i < 36; i++) {
+                ItemStack item = inv.getItem(gridSlots[i]);
+                if (item != null && item.getType() != Material.AIR) {
+                    BlockStorage.addBlockInfo(blockLoc, "slot_" + i, serializeItemStack(item));
+                } else {
+                    BlockStorage.addBlockInfo(blockLoc, "slot_" + i, "");
+                }
             }
         } finally {
-            MachineSessionGuard.release(blockLoc, p.getUniqueId());
+            MachineSessionManager.release(p);
         }
     }
 
@@ -169,50 +173,32 @@ public class MachineFabricatorHandler implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onBlockBreak(BlockBreakEvent e) {
-        Block block = e.getBlock();
-        SlimefunItem sfItem = BlockStorage.check(block);
-        if (sfItem == null || !MACHINE_ID.equals(sfItem.getId())) {
-            return;
-        }
-
-        Location blockLoc = block.getLocation();
-        if (MachineSessionGuard.isLocked(blockLoc)) {
-            e.setCancelled(true);
-            e.getPlayer().sendMessage(ChatColor.RED + "Close the Machine Fabricator before breaking it.");
-            return;
-        }
-
-        for (int i = 0; i < GRID_SLOTS.length; i++) {
-            String itemData = BlockStorage.getLocationInfo(blockLoc, "slot_" + i);
-            if (itemData != null && !itemData.isEmpty()) {
-                ItemStack item = deserializeItemStack(itemData);
-                if (item != null) {
-                    block.getWorld().dropItemNaturally(blockLoc, item);
-                }
-            }
-        }
-    }
-
     private static void attemptCraft(Player p, Inventory inv) {
-        ItemStack[] grid = new ItemStack[GRID_SLOTS.length];
-        for (int i = 0; i < GRID_SLOTS.length; i++) {
-            grid[i] = inv.getItem(GRID_SLOTS[i]);
+        int[] gridSlots = { 1, 2, 3, 4, 5, 6, 10, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 24,
+                28, 29, 30, 31, 32, 33, 37, 38, 39, 40, 41, 42, 46, 47, 48, 49, 50, 51 };
+        ItemStack[] grid = new ItemStack[36];
+
+        for (int i = 0; i < 36; i++) {
+            grid[i] = inv.getItem(gridSlots[i]);
         }
+
+        System.out.println("=== CRAFTEO 6x6 ===");
+        System.out.println("Recipes: " + RECIPE_CACHE.size());
 
         for (CustomRecipeItem customItem : RECIPE_CACHE) {
             if (customItem.getGridSize() != CustomRecipeItem.RecipeGridSize.GRID_6x6)
                 continue;
 
             ItemStack[] recipe = customItem.getFullRecipe();
+            System.out.println("Checkeando: " + customItem.getId());
+
             if (matchesRecipe(grid, recipe)) {
-                for (int i = 0; i < GRID_SLOTS.length; i++) {
+                for (int i = 0; i < 36; i++) {
                     ItemStack item = grid[i];
                     if (item != null && item.getType() != Material.AIR) {
                         item.setAmount(item.getAmount() - 1);
                         if (item.getAmount() <= 0) {
-                            inv.setItem(GRID_SLOTS[i], null);
+                            inv.setItem(gridSlots[i], null);
                         }
                     }
                 }
@@ -221,10 +207,12 @@ public class MachineFabricatorHandler implements Listener {
                 inv.setItem(17, output);
                 p.sendMessage(ChatColor.GREEN + "✓ Crafted: " + ChatColor.WHITE
                         + ChatColor.stripColor(output.getItemMeta().getDisplayName()));
+                System.out.println("✓ CRAFTEO EXITOSO!");
                 return;
             }
         }
 
+        System.out.println("❌ Receta inválida");
         p.sendMessage(ChatColor.RED + "✗ Invalid recipe!");
     }
 
@@ -255,7 +243,7 @@ public class MachineFabricatorHandler implements Listener {
         }
 
         if (sf1 == null && sf2 == null) {
-            return item1.getType() == item2.getType();
+            return item1.isSimilar(item2);
         }
 
         return false;
@@ -263,6 +251,28 @@ public class MachineFabricatorHandler implements Listener {
 
     private static boolean isEmpty(ItemStack item) {
         return item == null || item.getType() == Material.AIR;
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent e) {
+        Block block = e.getBlock();
+        SlimefunItem sfItem = BlockStorage.check(block);
+
+        if (sfItem != null && sfItem.getId().equals("MA_MILITARY_MACHINE_FABRICATOR")) {
+            Location blockLoc = block.getLocation();
+
+            for (int i = 0; i < 36; i++) {
+                String key = "slot_" + i;
+                String itemData = BlockStorage.getLocationInfo(blockLoc, key);
+                if (itemData != null && !itemData.isEmpty()) {
+                    ItemStack item = deserializeItemStack(itemData);
+                    if (item != null) {
+                        block.getWorld().dropItemNaturally(blockLoc, item);
+                    }
+                    BlockStorage.addBlockInfo(blockLoc, key, "");
+                }
+            }
+        }
     }
 
     private static String serializeItemStack(ItemStack item) {

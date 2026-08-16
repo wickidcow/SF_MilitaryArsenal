@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LEGACY_ARTIFACT_VERSION: "1.1.3"
+  LEGACY_ARTIFACT_VERSION: "1.1.2"
 
 jobs:
   build:
@@ -40,7 +40,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          grep -Fq '<version>1.1.3</version>' pom.xml
+          grep -Fq '<version>1.1.2</version>' pom.xml
           grep -Fq '<paper.version>[26.2.build,)</paper.version>' pom.xml
           grep -Fq '<maven.compiler.release>21</maven.compiler.release>' pom.xml
           grep -Fq '<finalName>SF_MilitaryArsenal_Legacy_v${project.version}</finalName>' pom.xml
@@ -76,30 +76,6 @@ jobs:
             exit 1
           fi
           echo 'Source security policy passed.'
-
-      - name: Verify persistent-machine dupe safeguards
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          test -f src/main/java/com/Chagui68/weaponsaddon/utils/MachineSessionGuard.java
-
-          for file in \
-            src/main/java/com/Chagui68/weaponsaddon/items/machines/MilitaryCraftingHandler.java \
-            src/main/java/com/Chagui68/weaponsaddon/items/machines/MachineFabricatorHandler.java \
-            src/main/java/com/Chagui68/weaponsaddon/items/machines/AmmunitionWorkshopHandler.java
-          do
-            grep -Fq 'MachineSessionGuard.acquire' "$file"
-            grep -Fq 'MachineSessionGuard.release' "$file"
-            grep -Fq 'MachineSessionGuard.isLocked' "$file"
-          done
-
-          grep -Fq '@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)' \
-            src/main/java/com/Chagui68/weaponsaddon/items/machines/MachineFabricatorHandler.java
-          grep -Fq '@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)' \
-            src/main/java/com/Chagui68/weaponsaddon/items/machines/AmmunitionWorkshopHandler.java
-
-          echo 'Persistent-machine dupe safeguards passed.'
 
       - name: Build Military Arsenal
         run: mvn -B -e -Dmaven.test.skip=true clean package --file pom.xml
@@ -177,12 +153,9 @@ jobs:
           set -euo pipefail
           TAG="$GITHUB_REF_NAME"
           JAR="dist/SF_MilitaryArsenal_Legacy_v${LEGACY_ARTIFACT_VERSION}.jar"
-          NOTES="RELEASE_NOTES_${LEGACY_ARTIFACT_VERSION}.md"
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$JAR" --clobber
-          elif [ -f "$NOTES" ]; then
-            gh release create "$TAG" "$JAR" --notes-file "$NOTES" --title "Military Arsenal Legacy $TAG"
           else
             gh release create "$TAG" "$JAR" --generate-notes --title "Military Arsenal Legacy $TAG"
           fi

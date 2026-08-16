@@ -1,19 +1,16 @@
 package com.Chagui68.weaponsaddon.items.machines;
 
 import com.Chagui68.weaponsaddon.items.CustomRecipeItem;
-import com.Chagui68.weaponsaddon.utils.MachineSessionGuard;
+import com.Chagui68.weaponsaddon.utils.MachineSessionManager;
 import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItem;
 import com.github.drakescraft_labs.slimefun4.libraries.dough.items.CustomItemStack;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
@@ -29,15 +26,8 @@ import static org.bukkit.Bukkit.createInventory;
 
 public class MilitaryCraftingHandler implements Listener {
 
-    private static final String MACHINE_ID = "MA_MILITARY_CRAFTING_TABLE";
     private static final Map<UUID, Location> openTables = new HashMap<>();
     private static final List<CustomRecipeItem> RECIPE_CACHE = new ArrayList<>();
-    private static final int[] GRID_SLOTS = {
-            11, 12, 13, 14,
-            20, 21, 22, 23,
-            29, 30, 31, 32,
-            38, 39, 40, 41
-    };
 
     public static void registerRecipe(CustomRecipeItem item) {
         RECIPE_CACHE.add(item);
@@ -49,7 +39,8 @@ public class MilitaryCraftingHandler implements Listener {
     }
 
     private static void openTableGUI(Player p, Location blockLoc) {
-        if (!MachineSessionGuard.acquire(blockLoc, p)) {
+        if (!MachineSessionManager.tryAcquire(p, blockLoc)) {
+            p.sendMessage(ChatColor.RED + "This machine is already in use. Close your current machine GUI and try again.");
             return;
         }
 
@@ -68,15 +59,22 @@ public class MilitaryCraftingHandler implements Listener {
                 inv.setItem(slot, border);
             }
 
-            for (int i = 0; i < GRID_SLOTS.length; i++) {
+            int[] gridSlots = {
+                    11, 12, 13, 14,
+                    20, 21, 22, 23,
+                    29, 30, 31, 32,
+                    38, 39, 40, 41
+            };
+
+            for (int i = 0; i < 16; i++) {
                 String itemData = BlockStorage.getLocationInfo(blockLoc, "slot_" + i);
                 if (itemData != null && !itemData.isEmpty()) {
                     ItemStack item = deserializeItemStack(itemData);
                     if (item != null) {
-                        inv.setItem(GRID_SLOTS[i], item);
+                        inv.setItem(gridSlots[i], item);
                     }
                 } else {
-                    inv.setItem(GRID_SLOTS[i], null);
+                    inv.setItem(gridSlots[i], null);
                 }
             }
 
@@ -103,39 +101,41 @@ public class MilitaryCraftingHandler implements Listener {
                     ChatColor.GRAY + "Click to craft item",
                     ChatColor.YELLOW + "Recipe must match exactly"));
 
-            openTables.put(p.getUniqueId(), blockLoc.clone());
+            openTables.put(p.getUniqueId(), blockLoc);
             p.openInventory(inv);
         } catch (RuntimeException ex) {
             openTables.remove(p.getUniqueId());
-            MachineSessionGuard.release(blockLoc, p.getUniqueId());
+            MachineSessionManager.release(p);
             throw ex;
         }
     }
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent e) {
-        if (!(e.getPlayer() instanceof Player p))
+        if (!(e.getPlayer() instanceof Player))
             return;
         if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Military Crafting Table"))
             return;
 
+        Player p = (Player) e.getPlayer();
         Location blockLoc = openTables.remove(p.getUniqueId());
         if (blockLoc == null)
             return;
 
         try {
-            if (!BlockStorage.check(blockLoc, MACHINE_ID)) {
-                return;
-            }
-
+            int[] gridSlots = { 11, 12, 13, 14, 20, 21, 22, 23, 29, 30, 31, 32, 38, 39, 40, 41 };
             Inventory inv = e.getInventory();
-            for (int i = 0; i < GRID_SLOTS.length; i++) {
-                ItemStack item = inv.getItem(GRID_SLOTS[i]);
-                BlockStorage.addBlockInfo(blockLoc, "slot_" + i,
-                        item != null && item.getType() != Material.AIR ? serializeItemStack(item) : "");
+
+            for (int i = 0; i < 16; i++) {
+                ItemStack item = inv.getItem(gridSlots[i]);
+                if (item != null && item.getType() != Material.AIR) {
+                    BlockStorage.addBlockInfo(blockLoc, "slot_" + i, serializeItemStack(item));
+                } else {
+                    BlockStorage.addBlockInfo(blockLoc, "slot_" + i, "");
+                }
             }
         } finally {
-            MachineSessionGuard.release(blockLoc, p.getUniqueId());
+            MachineSessionManager.release(p);
         }
     }
 
@@ -168,38 +168,31 @@ public class MilitaryCraftingHandler implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onBlockBreak(BlockBreakEvent e) {
-        Block block = e.getBlock();
-        SlimefunItem sfItem = BlockStorage.check(block);
-        if (sfItem == null || !MACHINE_ID.equals(sfItem.getId())) {
-            return;
-        }
-
-        if (MachineSessionGuard.isLocked(block.getLocation())) {
-            e.setCancelled(true);
-            e.getPlayer().sendMessage(ChatColor.RED + "Close the Military Crafting Table before breaking it.");
-        }
-    }
-
     private static void attemptCraft(Player p, Inventory inv) {
-        ItemStack[] grid = new ItemStack[GRID_SLOTS.length];
-        for (int i = 0; i < GRID_SLOTS.length; i++) {
-            grid[i] = inv.getItem(GRID_SLOTS[i]);
+        int[] gridSlots = { 11, 12, 13, 14, 20, 21, 22, 23, 29, 30, 31, 32, 38, 39, 40, 41 };
+        ItemStack[] grid = new ItemStack[16];
+
+        for (int i = 0; i < 16; i++) {
+            grid[i] = inv.getItem(gridSlots[i]);
         }
+
+        System.out.println("=== CRAFTEO 4x4 ===");
+        System.out.println("Recipes: " + RECIPE_CACHE.size());
 
         for (CustomRecipeItem customItem : RECIPE_CACHE) {
             if (customItem.getGridSize() != CustomRecipeItem.RecipeGridSize.GRID_4x4)
                 continue;
 
             ItemStack[] recipe = customItem.getFullRecipe();
+            System.out.println("Checkeando: " + customItem.getId());
+
             if (matchesRecipe(grid, recipe)) {
-                for (int i = 0; i < GRID_SLOTS.length; i++) {
+                for (int i = 0; i < 16; i++) {
                     ItemStack item = grid[i];
                     if (item != null && item.getType() != Material.AIR) {
                         item.setAmount(item.getAmount() - 1);
                         if (item.getAmount() <= 0) {
-                            inv.setItem(GRID_SLOTS[i], null);
+                            inv.setItem(gridSlots[i], null);
                         }
                     }
                 }
@@ -208,10 +201,12 @@ public class MilitaryCraftingHandler implements Listener {
                 inv.setItem(34, output);
                 p.sendMessage(ChatColor.GREEN + "✓ Crafted: " + ChatColor.WHITE
                         + ChatColor.stripColor(output.getItemMeta().getDisplayName()));
+                System.out.println("✓ CRAFTEO EXITOSO!");
                 return;
             }
         }
 
+        System.out.println("❌ Receta inválida");
         p.sendMessage(ChatColor.RED + "✗ Invalid recipe!");
     }
 
@@ -242,7 +237,7 @@ public class MilitaryCraftingHandler implements Listener {
         }
 
         if (sf1 == null && sf2 == null) {
-            return item1.getType() == item2.getType();
+            return item1.isSimilar(item2);
         }
 
         return false;
