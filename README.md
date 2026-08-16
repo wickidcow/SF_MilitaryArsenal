@@ -5,62 +5,69 @@
 [![Slimefun Legacy](https://img.shields.io/badge/Slimefun-Legacy-brightgreen)](https://github.com/wickidcow/Slimefun-Legacy)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-Military Arsenal is a combat-focused Slimefun addon with military weapons, ammunition, workbenches, war machines, defensive turrets, bosses, elite combat mobs, upgrade systems, Void/antimatter progression, and coordinate-based bombardment.
+Military Arsenal is a combat-focused Slimefun addon with military weapons, ammunition, advanced crafting, defensive turrets, war machines, upgrade systems, Void/antimatter progression, and coordinate-based bombardment.
 
-This repository is a **Slimefun Legacy compatibility fork** maintained for the AlbionMC.com server environment. It preserves the gameplay work of the original project while keeping the addon usable on the current Paper/Purpur 26.2 platform and the Slimefun Legacy API surface.
+This repository is a **Slimefun Legacy compatibility fork** maintained for the AlbionMC.com server environment. It preserves the gameplay work of the original project while keeping the addon usable on current Paper/Purpur 26.2+ and the Slimefun Legacy API surface.
 
-> **Original project:** [Chagui68/Military-Arsenal-addon-for-Slimefun4](https://github.com/Chagui68/Military-Arsenal-addon-for-Slimefun4)  
+> **Upstream project:** [Chagui68/SF_MilitaryArsenal](https://github.com/Chagui68/SF_MilitaryArsenal)  
 > **Original developer:** [Chagui68](https://github.com/Chagui68)
 
 ## ❤️ Homage to Chagui68
 
-**Military Arsenal exists because of the work of Chagui68.** The original concept, gameplay direction, military progression, weapons, ammunition, machines, defensive turret systems, bosses, crafting systems, models, structures, and the foundation of this addon were created by **Chagui68**.
+**Military Arsenal exists because of the work of Chagui68.** The original concept, gameplay direction, military progression, weapons, ammunition, machines, defensive turret systems, crafting systems, models, structures, and the foundation of this addon were created by **Chagui68**.
 
-This Slimefun Legacy repository is a compatibility and maintenance fork. Its purpose is to preserve that original work and keep it playable on newer Paper/Purpur and Slimefun Legacy environments; it is **not** intended to replace, take ownership of, or diminish the original project or its creator.
+This Slimefun Legacy repository is a compatibility and maintenance fork. Its purpose is to preserve that work and keep it playable on newer Paper/Purpur and Slimefun Legacy environments; it is not intended to replace, take ownership of, or diminish the original project or its creator.
 
-A sincere thank-you to **Chagui68** for creating Military Arsenal and making the project available to the Slimefun community. If you enjoy this addon, please visit the [original Military Arsenal repository](https://github.com/Chagui68/Military-Arsenal-addon-for-Slimefun4) and give the original project and developer the recognition they deserve.
+If you enjoy the addon, please visit the upstream repository and give the original project and developer the recognition they deserve.
 
-### Upstream collaboration
+## 🆕 Legacy 1.1.3 — Upstream Sync & Security Hardening
 
-Chagui68's current turret progression and elite-combat adaptations are intentionally retained in this fork. His **PR #3** was merged into the Legacy branch history, including the four-stage turret progression interface and the new elite combat systems. Legacy-specific reliability fixes are layered on top rather than replacing his gameplay direction.
+Version **1.1.3** synchronizes the Legacy fork with Chagui68's current `main` branch and adds a focused public-server security pass:
 
-## 🆕 Legacy 1.1.0 — Turret Reliability Overhaul
+- Current upstream `main` is merged with real Git ancestry preserved.
+- Upstream removal of the custom Military mob/boss entity system is incorporated.
+- Minecraft Java **1.21.11** version detection is incorporated.
+- `/weapons` remains restricted to maintenance/admin actions; old `give` and `summon` paths are removed.
+- The previously identified hidden unban/backdoor path is absent and blocked by CI regression scans.
+- Persistent virtual machine inventories are single-session per block.
+- Active copied inventories cannot be broken or destroyed by explosions.
+- Shift-click and drag-transfer bypasses are blocked in sensitive custom inventories.
+- 4×4 and 6×6 crafting result slots are take-only and cannot be overwritten by a second craft.
+- Unclaimed crafting results are returned safely when the GUI closes.
+- Vanilla recipe matching requires item similarity instead of accepting custom items merely because they share a Material.
+- Bombardment targeting is range-limited, world-bound, world-border checked, and restricted to already-loaded chunks.
+- Bombardment TNT is attributed to the firing player for protection/logging compatibility.
+- CI checks the source and compiled JAR for known privilege-escalation/backdoor signatures and anti-dupe safeguards.
 
-Version **1.1.0** combines Chagui68's latest upstream adaptations with a focused Slimefun Legacy reliability pass:
+## 🔄 Upstream synchronization policy
 
-- Four-stage Attack and Machine Gun turret progression retained from Chagui68
-- Level scaling for range, damage, energy capacity, energy cost, and cooldown behavior
-- Progression GUI with current/next-level stats, XP/item requirements, and growth-space checks
-- NBT turret upgrades now validate the exact next-level footprint instead of rejecting the turret's own blocks
-- Turret dismantling removes only blocks that still match the turret's NBT structure, protecting nearby/player-replaced blocks
-- Missing NBT structure pieces can repair safely without overwriting foreign blocks
-- Interaction hitboxes recover automatically after entity loss/chunk reload instead of depending on entities inside the NBT parser
-- Attack and Machine Gun turret damage now reads progression from the actual base block instead of the elevated muzzle location
-- Line-of-sight targeting now originates from the real turret muzzle/sensor height
-- Wraith mountable turret now actually consumes **150 J per shot** and is capped at **4 shots/second**
-- Sniper turret displayed stats now match its real **55-block range / 100 HP damage** behavior
-- Sniper projectile visuals cover the full firing range and use the elevated sensor for line-of-sight
-- Melee turret displayed damage now matches its real **50 HP** attack
-- Melee attacks no longer consume power when the Guardian model cannot begin an attack, and overlapping attack animations are prevented
-- Chagui68's elite combat mob additions from PR #3 remain included
-- **Automatic Military Arsenal mob spawning is now disabled by default and must be explicitly enabled by the server owner**
+The fork intentionally keeps **Chagui68's upstream commits in Git history**. Legacy-specific changes are layered on top instead of rewriting or squashing upstream history.
+
+For future updates:
+
+1. Fetch `Chagui68/SF_MilitaryArsenal` as upstream.
+2. Merge upstream `main` into a short-lived integration branch.
+3. Resolve only genuine Legacy-specific conflicts.
+4. Run Java 25 build, security, anti-dupe, and JAR audits.
+5. Merge the integration branch into this repository's `main` with normal merge ancestry preserved.
+
+Avoid squashing the upstream synchronization merge itself. Preserving its parentage is what lets Git recognize already-integrated upstream work the next time the developer updates the project.
 
 ## 🧰 Legacy compatibility
 
 - Paper / Purpur **26.2+** target
-- Java **25** runtime, matching Paper 26.2 requirements
-- Java **21-compatible plugin bytecode** for a conservative addon ABI; CI builds with Java 25
+- Minecraft Java **1.21.11+** version detection
+- Java **25** runtime target
+- Java **21-compatible plugin bytecode**; CI builds with Java 25
 - **Slimefun Legacy** is the only hard addon dependency
-- Includes Chagui68's latest merged turret progression and elite-combat adaptations
-- Replaces the upstream Drake-only compile dependency with the public Slimefun4-compatible API surface used by Slimefun Legacy
-- Keeps upstream source easy to synchronize by preparing a Legacy-compatible generated source tree during Maven builds
-- Direct, versioned GitHub Actions JAR output: `SF_MilitaryArsenal_Legacy_v1.1.0.jar`
+- Networks remains optional
+- Direct, versioned GitHub Actions JAR output: `SF_MilitaryArsenal_Legacy_v1.1.3.jar`
 
 ### Optional Networks compatibility
 
-**Networks is not required.** When Networks is installed, Paper loads Military Arsenal first so its Slimefun items and recipes are already registered when Networks builds its supported recipe indexes. This uses normal Slimefun registry discovery rather than a private or reflection-based Networks API, which keeps the addons independently updatable.
+**Networks is not required.** Military Arsenal is configured to load before Networks so its Slimefun items and recipes are registered before Networks builds its indexes. The optional integration code only runs when Networks is present.
 
-**Infinity Expansion / IE1 is not a dependency of Military Arsenal. IE2 is therefore not required.** The Void and antimatter progression in this addon belongs to Military Arsenal itself and does not use Infinity Expansion item IDs.
+**Infinity Expansion / IE1 and IE2 are not dependencies of Military Arsenal.** The Void and antimatter progression in this addon belongs to Military Arsenal itself.
 
 ## 📦 Requirements
 
@@ -68,8 +75,8 @@ Version **1.1.0** combines Chagui68's latest upstream adaptations with a focused
 |---|---|
 | Slimefun Legacy | **Required** |
 | Paper or Purpur 26.2+ | **Required / supported target** |
-| Java 25 | **Required by Paper 26.2** |
-| Networks | Optional; automatic load-order compatibility |
+| Java 25 | **Required by the Paper 26.2 target** |
+| Networks | Optional |
 | Infinity Expansion / IE1 | Not required |
 | Infinity Expansion 2 / IE2 | Not required |
 | Folia | Not declared supported |
@@ -87,59 +94,46 @@ Version **1.1.0** combines Chagui68's latest upstream adaptations with a focused
 - Wraith-class mountable turret / war-machine system
 - Four-stage Attack and Machine Gun turret progression
 - Multi-level NBT turret structures with protected upgrade/dismantle handling
-- Spawn Negator for military-entity control
 
-### 💣 War machines
+### 💣 Machines & progression
 - Bombardment Terminal with coordinate-targeted strikes
 - Military Crafting Table
 - Military Machine Fabricator
 - Ammunition Workshop
 - Antimatter Pedestal and Ritual progression
-
-### ☠️ Encounters & progression
-- Military bosses and custom mob behavior
-- Chagui68's expanded elite combat mobs and tactical behaviors
-- Boss reward systems
-- Vouchers
+- Military vouchers
 - Void armor and antimatter materials
 
-## 🧟 Custom mob spawning is opt-in
+## Removed upstream entity subsystem
 
-**Automatic Military Arsenal mob conversions are disabled by default.** Installing the addon should not cause vanilla mobs to begin turning into Military Arsenal mobs unless the server owner intentionally enables them.
+The current upstream synchronization removes the old custom Military mob/boss implementation, including the boss AI/listeners, automatic Military mob conversions, Boss Spawn Egg, Spawn Negator, cinematic join behavior, and the old entity-spawning admin commands.
 
-The following automatic conversions ship with `spawn_chance: 0.0`:
+The weapons, armor, machines, turrets, crafting, vouchers, Void progression, and war-machine systems remain.
 
-- Elite Ranger
-- Elite Killer
-- The King
-- Pusher
-- Battle Witch
-- Juan
-- Rusty Crab
-- Purple Guy
+## 🔐 Security / anti-dupe policy
 
-To enable a specific mob, edit `plugins/WeaponsAddon/config.yml` and raise only that mob's `spawn_chance` above `0.0`.
+The build fails if known privilege-escalation or backdoor APIs/signatures reappear, including server command dispatch, console command access, OP modification, ban pardoning, dynamic permission attachment, and the previously identified hidden signature fields.
 
-For example, to give Purple Guy a 5% conversion chance:
+Persistent copied machine inventories are locked to one player per block. A second player cannot open another snapshot of the same stored contents, and an active copied-inventory machine is protected from breaking and explosions.
+
+Sensitive custom GUIs also block shift-click and drag-transfer bypasses. Crafting output slots are take-only, and persisted machine slot data is cleared after legitimate break-time drops.
+
+## 💥 Bombardment safety defaults
 
 ```yaml
-mobs:
-  purple_guy:
-    spawn_chance: 0.05
+bombardment:
+  max_horizontal_range: 256
+  cooldown_seconds: 30
 ```
 
-`0.0` means disabled, `0.05` means 5%, `0.10` means 10%, and `1.0` means 100%.
-
-> **Upgrading an existing server:** Bukkit normally preserves an existing `plugins/WeaponsAddon/config.yml`. If an older installation already has non-zero spawn chances, change those values to `0.0` manually. The new safe defaults apply automatically to fresh/generated configs, not by overwriting an administrator's existing configuration.
-
-Manual boss systems, boss spawn eggs, weapons, armor, machines, turrets, crafting, and other non-random-spawn features remain available independently of these automatic mob conversion chances.
+Targets must be in the terminal's world, inside the world border, within range, and in an already-loaded chunk. Delayed missile execution rechecks those conditions before spawning effects or TNT.
 
 ## 📥 Installation
 
 1. Install **Slimefun Legacy** on a Paper/Purpur 26.2+ server running Java 25.
-2. Download the latest `SF_MilitaryArsenal_Legacy_v1.x.x.jar` from this repository's Actions or Releases.
+2. Download `SF_MilitaryArsenal_Legacy_v1.1.3.jar` from this repository's Releases.
 3. Place the JAR in the server's `plugins/` directory.
-4. Optionally install a compatible **Networks** build; no additional bridge plugin or configuration is required.
+4. Optionally install a compatible Networks build.
 5. Restart the server fully.
 
 No separate Dough, Drake Slimefun6, IE1, or IE2 plugin is required by this Legacy build.
@@ -152,13 +146,13 @@ Build with JDK 25:
 mvn -B -Dmaven.test.skip=true clean package
 ```
 
-The finished JAR is written to `target/SF_MilitaryArsenal_Legacy_v1.1.0.jar`. GitHub Actions publishes the same JAR directly and tagged builds attach the raw JAR to the GitHub Release.
+The finished JAR is written to `target/SF_MilitaryArsenal_Legacy_v1.1.3.jar`. GitHub Actions publishes the raw JAR directly, and tagged builds attach the same JAR to the GitHub Release.
 
 ## 📜 License & attribution
 
 Military Arsenal remains distributed under the **GNU General Public License v3.0** included in this repository. This fork does not remove or replace the original project's licensing or attribution.
 
-All original Military Arsenal authorship and project credit remains with **Chagui68**. Changes in this repository are focused on Slimefun Legacy compatibility, platform maintenance, bug fixes, and continued usability on modern server software.
+All original Military Arsenal authorship and project credit remains with **Chagui68**. Changes in this repository are focused on Slimefun Legacy compatibility, platform maintenance, security, bug fixes, and continued usability on modern server software.
 
 Minecraft is a trademark of Microsoft/Mojang. This project is an independent community addon and is **not affiliated with, endorsed by, or sponsored by Microsoft or Mojang**. Slimefun and other referenced projects belong to their respective authors and maintainers.
 

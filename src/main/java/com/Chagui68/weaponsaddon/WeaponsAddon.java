@@ -6,7 +6,6 @@ import com.Chagui68.weaponsaddon.handlers.MachineGunHandler;
 import com.Chagui68.weaponsaddon.handlers.TraderHandler;
 import com.Chagui68.weaponsaddon.handlers.UpgradeTableHandler;
 import com.Chagui68.weaponsaddon.items.AntimatterRifle;
-import com.Chagui68.weaponsaddon.items.BossSpawnEgg;
 import com.Chagui68.weaponsaddon.items.MachineGun;
 import com.Chagui68.weaponsaddon.items.MachineGunAmmo;
 import com.Chagui68.weaponsaddon.items.components.MilitaryComponents;
@@ -29,18 +28,12 @@ import com.Chagui68.weaponsaddon.items.turrets.MachineGunTurret;
 import com.Chagui68.weaponsaddon.items.turrets.MountableTurret;
 import com.Chagui68.weaponsaddon.items.turrets.TurretStructureManager;
 import com.Chagui68.weaponsaddon.items.turrets.TurretUpgradeGUI;
-import com.Chagui68.weaponsaddon.items.machines.SpawnNegator;
 import com.Chagui68.weaponsaddon.items.machines.WeaponUpgradeTable;
 import com.Chagui68.weaponsaddon.commands.WeaponsCommand;
-import com.Chagui68.weaponsaddon.handlers.MilitaryCombatHandler;
-import com.Chagui68.weaponsaddon.handlers.MilitaryMobHandler;
-import com.Chagui68.weaponsaddon.handlers.EliteMobHandler;
-import com.Chagui68.weaponsaddon.listeners.BossAIHandler;
-import com.Chagui68.weaponsaddon.listeners.EliteMobCombatListener;
-import com.Chagui68.weaponsaddon.listeners.CinematicJoinListener;
 import com.Chagui68.weaponsaddon.listeners.SlimefunGuideListener;
 import com.Chagui68.weaponsaddon.handlers.InventoryEffectHandler;
 import com.Chagui68.weaponsaddon.items.armor.VoidSuitPiece;
+import com.Chagui68.weaponsaddon.utils.MachineSessionManager;
 import com.github.drakescraft_labs.slimefun4.api.SlimefunAddon;
 import com.github.drakescraft_labs.slimefun4.api.items.groups.NestedItemGroup;
 import com.github.drakescraft_labs.slimefun4.api.items.groups.SubItemGroup;
@@ -105,11 +98,6 @@ public class WeaponsAddon extends JavaPlugin implements SlimefunAddon {
                 mainGroup,
                 new CustomItemStack(Material.BLAST_FURNACE, "&4⚔ &cMilitary Multiblocks"));
 
-        SubItemGroup bossesGroup = new SubItemGroup(
-                new NamespacedKey(this, "military_bosses"),
-                mainGroup,
-                new CustomItemStack(Material.WITHER_SKELETON_SKULL, "&4☠ &cMilitary Bosses"));
-
         SubItemGroup vouchersGroup = new SubItemGroup(
                 new NamespacedKey(this, "military_vouchers"),
                 mainGroup,
@@ -142,7 +130,6 @@ public class WeaponsAddon extends JavaPlugin implements SlimefunAddon {
         ammunitionGroup.register(this);
         workbenchesGroup.register(this);
         machinesGroup.register(this);
-        bossesGroup.register(this);
         vouchersGroup.register(this);
         warMachinesGroup.register(this);
         upgradesGroup.register(this);
@@ -172,10 +159,6 @@ public class WeaponsAddon extends JavaPlugin implements SlimefunAddon {
             getLogger().info("Registering Void Armor set...");
             VoidSuitPiece.register(this, armorGroup);
             getLogger().info("Void Armor set registered successfully!");
-
-            getLogger().info("Registering SpawnNegator...");
-            SpawnNegator.register(this, defensesGroup);
-            getLogger().info("SpawnNegator registered successfully!");
         } catch (Exception e) {
             getLogger().severe("Failed to register MilitaryComponents: " + e.getMessage());
             e.printStackTrace();
@@ -305,16 +288,8 @@ public class WeaponsAddon extends JavaPlugin implements SlimefunAddon {
             e.printStackTrace();
         }
 
-        try {
-            getLogger().info("Registering BossSpawnEgg...");
-            BossSpawnEgg.register(this, bossesGroup);
-            getLogger().info("BossSpawnEgg registered successfully!");
-        } catch (Exception e) {
-            getLogger().severe("Failed to register BossSpawnEgg: " + e.getMessage());
-            e.printStackTrace();
-        }
-
         // Register listeners
+        getServer().getPluginManager().registerEvents(new MachineSessionManager(), this);
         getServer().getPluginManager().registerEvents(new SlimefunGuideListener(), this);
         getServer().getPluginManager().registerEvents(new RecipeViewerGUI(), this);
         getServer().getPluginManager().registerEvents(new ComponentsHandler(), this);
@@ -324,18 +299,11 @@ public class WeaponsAddon extends JavaPlugin implements SlimefunAddon {
         getServer().getPluginManager().registerEvents(new MachineFabricatorHandler(), this);
         getServer().getPluginManager().registerEvents(new AmmunitionWorkshopHandler(), this);
         getServer().getPluginManager().registerEvents(new UpgradeTableHandler(), this);
-        getServer().getPluginManager().registerEvents(new BossAIHandler(this), this);
-        getServer().getPluginManager().registerEvents(new MilitaryMobHandler(this), this);
-        getServer().getPluginManager().registerEvents(new EliteMobHandler(this), this);
-        getServer().getPluginManager().registerEvents(new EliteMobCombatListener(), this);
-        getServer().getPluginManager().registerEvents(new MilitaryCombatHandler(this), this);
         getServer().getPluginManager().registerEvents(new AntimatterRifleHandler(), this);
         getServer().getPluginManager().registerEvents(new TraderHandler(), this);
-        getServer().getPluginManager().registerEvents(new CinematicJoinListener(), this);
         getServer().getPluginManager().registerEvents(new TurretUpgradeGUI(), this);
 
         // Register commands
-
         WeaponsCommand weaponsCommand = new WeaponsCommand();
         getCommand("weapons").setExecutor(weaponsCommand);
         getCommand("weapons").setTabCompleter(weaponsCommand);
@@ -345,6 +313,7 @@ public class WeaponsAddon extends JavaPlugin implements SlimefunAddon {
 
     @Override
     public void onDisable() {
+        MachineSessionManager.clear();
         AttackTurret.cleanupAllModels();
         SniperTurret.cleanupAllModels();
         MeleeTurret.cleanupAllModels();
