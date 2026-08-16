@@ -16,6 +16,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -29,8 +30,19 @@ import static org.bukkit.Bukkit.createInventory;
 
 public class MachineFabricatorHandler implements Listener {
 
+    private static final String MACHINE_ID = "MA_MILITARY_MACHINE_FABRICATOR";
     private static final Map<UUID, Location> openFabricators = new HashMap<>();
     private static final List<CustomRecipeItem> RECIPE_CACHE = new ArrayList<>();
+    private static final int[] GRID_SLOTS = {
+            1, 2, 3, 4, 5, 6,
+            10, 11, 12, 13, 14, 15,
+            19, 20, 21, 22, 23, 24,
+            28, 29, 30, 31, 32, 33,
+            37, 38, 39, 40, 41, 42,
+            46, 47, 48, 49, 50, 51
+    };
+    private static final int OUTPUT_SLOT = 17;
+    private static final int CRAFT_BUTTON = 53;
 
     public static void registerRecipe(CustomRecipeItem item) {
         RECIPE_CACHE.add(item);
@@ -61,24 +73,15 @@ public class MachineFabricatorHandler implements Listener {
                 inv.setItem(slot, border);
             }
 
-            int[] gridSlots = {
-                    1, 2, 3, 4, 5, 6,
-                    10, 11, 12, 13, 14, 15,
-                    19, 20, 21, 22, 23, 24,
-                    28, 29, 30, 31, 32, 33,
-                    37, 38, 39, 40, 41, 42,
-                    46, 47, 48, 49, 50, 51
-            };
-
-            for (int i = 0; i < 36; i++) {
+            for (int i = 0; i < GRID_SLOTS.length; i++) {
                 String itemData = BlockStorage.getLocationInfo(blockLoc, "slot_" + i);
                 if (itemData != null && !itemData.isEmpty()) {
                     ItemStack item = deserializeItemStack(itemData);
                     if (item != null) {
-                        inv.setItem(gridSlots[i], item);
+                        inv.setItem(GRID_SLOTS[i], item);
                     }
                 } else {
-                    inv.setItem(gridSlots[i], null);
+                    inv.setItem(GRID_SLOTS[i], null);
                 }
             }
 
@@ -88,7 +91,7 @@ public class MachineFabricatorHandler implements Listener {
                     ChatColor.GRAY + "Place items in 6×6 grid",
                     ChatColor.GRAY + "Click CRAFT button"));
 
-            inv.setItem(17, null);
+            inv.setItem(OUTPUT_SLOT, null);
 
             inv.setItem(0, new CustomItemStack(Material.RESPAWN_ANCHOR,
                     ChatColor.DARK_RED + "⚙ Machine Fabricator",
@@ -98,7 +101,7 @@ public class MachineFabricatorHandler implements Listener {
                     "",
                     ChatColor.AQUA + "Grid: 36 slots (6×6)"));
 
-            inv.setItem(53, new CustomItemStack(Material.CRAFTING_TABLE,
+            inv.setItem(CRAFT_BUTTON, new CustomItemStack(Material.CRAFTING_TABLE,
                     ChatColor.GREEN + "▶ CRAFT ◀",
                     "",
                     ChatColor.GRAY + "Click to craft machine",
@@ -115,23 +118,22 @@ public class MachineFabricatorHandler implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent e) {
-        if (!(e.getPlayer() instanceof Player))
+        if (!(e.getPlayer() instanceof Player p))
             return;
         if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Machine Fabricator"))
             return;
 
-        Player p = (Player) e.getPlayer();
         Location blockLoc = openFabricators.remove(p.getUniqueId());
         if (blockLoc == null)
             return;
 
         try {
-            int[] gridSlots = { 1, 2, 3, 4, 5, 6, 10, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 24,
-                    28, 29, 30, 31, 32, 33, 37, 38, 39, 40, 41, 42, 46, 47, 48, 49, 50, 51 };
             Inventory inv = e.getInventory();
+            returnItemToPlayer(p, inv.getItem(OUTPUT_SLOT));
+            inv.setItem(OUTPUT_SLOT, null);
 
-            for (int i = 0; i < 36; i++) {
-                ItemStack item = inv.getItem(gridSlots[i]);
+            for (int i = 0; i < GRID_SLOTS.length; i++) {
+                ItemStack item = inv.getItem(GRID_SLOTS[i]);
                 if (item != null && item.getType() != Material.AIR) {
                     BlockStorage.addBlockInfo(blockLoc, "slot_" + i, serializeItemStack(item));
                 } else {
@@ -145,18 +147,25 @@ public class MachineFabricatorHandler implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
-        if (!(e.getWhoClicked() instanceof Player))
+        if (!(e.getWhoClicked() instanceof Player p))
             return;
         if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Machine Fabricator"))
             return;
 
-        Player p = (Player) e.getWhoClicked();
-        int slot = e.getRawSlot();
+        if (e.isShiftClick()) {
+            e.setCancelled(true);
+            return;
+        }
 
-        int[] allowedSlots = { 1, 2, 3, 4, 5, 6, 10, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 24,
-                28, 29, 30, 31, 32, 33, 37, 38, 39, 40, 41, 42, 46, 47, 48, 49, 50, 51, 17 };
+        int slot = e.getRawSlot();
+        if (slot == OUTPUT_SLOT) {
+            e.setCancelled(true);
+            takeOutput(p, e.getInventory());
+            return;
+        }
+
         boolean allowed = false;
-        for (int s : allowedSlots) {
+        for (int s : GRID_SLOTS) {
             if (slot == s) {
                 allowed = true;
                 break;
@@ -167,53 +176,80 @@ public class MachineFabricatorHandler implements Listener {
             e.setCancelled(true);
         }
 
-        if (slot == 53 && e.getCurrentItem() != null && e.getCurrentItem().getType() == Material.CRAFTING_TABLE) {
+        if (slot == CRAFT_BUTTON && e.getCurrentItem() != null
+                && e.getCurrentItem().getType() == Material.CRAFTING_TABLE) {
             e.setCancelled(true);
             attemptCraft(p, e.getInventory());
         }
     }
 
-    private static void attemptCraft(Player p, Inventory inv) {
-        int[] gridSlots = { 1, 2, 3, 4, 5, 6, 10, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 24,
-                28, 29, 30, 31, 32, 33, 37, 38, 39, 40, 41, 42, 46, 47, 48, 49, 50, 51 };
-        ItemStack[] grid = new ItemStack[36];
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent e) {
+        if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Machine Fabricator"))
+            return;
 
-        for (int i = 0; i < 36; i++) {
-            grid[i] = inv.getItem(gridSlots[i]);
+        int topSize = e.getView().getTopInventory().getSize();
+        if (e.getRawSlots().stream().anyMatch(slot -> slot < topSize)) {
+            e.setCancelled(true);
+        }
+    }
+
+    private static void attemptCraft(Player p, Inventory inv) {
+        ItemStack existingOutput = inv.getItem(OUTPUT_SLOT);
+        if (existingOutput != null && existingOutput.getType() != Material.AIR) {
+            p.sendMessage(ChatColor.RED + "✗ Take the current result before crafting again.");
+            return;
         }
 
-        System.out.println("=== CRAFTEO 6x6 ===");
-        System.out.println("Recipes: " + RECIPE_CACHE.size());
+        ItemStack[] grid = new ItemStack[GRID_SLOTS.length];
+        for (int i = 0; i < GRID_SLOTS.length; i++) {
+            grid[i] = inv.getItem(GRID_SLOTS[i]);
+        }
 
         for (CustomRecipeItem customItem : RECIPE_CACHE) {
             if (customItem.getGridSize() != CustomRecipeItem.RecipeGridSize.GRID_6x6)
                 continue;
 
             ItemStack[] recipe = customItem.getFullRecipe();
-            System.out.println("Checkeando: " + customItem.getId());
-
             if (matchesRecipe(grid, recipe)) {
-                for (int i = 0; i < 36; i++) {
+                for (int i = 0; i < GRID_SLOTS.length; i++) {
                     ItemStack item = grid[i];
                     if (item != null && item.getType() != Material.AIR) {
                         item.setAmount(item.getAmount() - 1);
                         if (item.getAmount() <= 0) {
-                            inv.setItem(gridSlots[i], null);
+                            inv.setItem(GRID_SLOTS[i], null);
                         }
                     }
                 }
 
                 ItemStack output = customItem.getItem().clone();
-                inv.setItem(17, output);
+                inv.setItem(OUTPUT_SLOT, output);
                 p.sendMessage(ChatColor.GREEN + "✓ Crafted: " + ChatColor.WHITE
                         + ChatColor.stripColor(output.getItemMeta().getDisplayName()));
-                System.out.println("✓ CRAFTEO EXITOSO!");
                 return;
             }
         }
 
-        System.out.println("❌ Receta inválida");
         p.sendMessage(ChatColor.RED + "✗ Invalid recipe!");
+    }
+
+    private static void takeOutput(Player p, Inventory inv) {
+        ItemStack output = inv.getItem(OUTPUT_SLOT);
+        if (output == null || output.getType() == Material.AIR)
+            return;
+
+        inv.setItem(OUTPUT_SLOT, null);
+        returnItemToPlayer(p, output);
+    }
+
+    private static void returnItemToPlayer(Player p, ItemStack item) {
+        if (item == null || item.getType() == Material.AIR)
+            return;
+
+        Map<Integer, ItemStack> leftovers = p.getInventory().addItem(item);
+        for (ItemStack leftover : leftovers.values()) {
+            p.getWorld().dropItemNaturally(p.getLocation(), leftover);
+        }
     }
 
     private static boolean matchesRecipe(ItemStack[] grid, ItemStack[] recipe) {
@@ -258,10 +294,10 @@ public class MachineFabricatorHandler implements Listener {
         Block block = e.getBlock();
         SlimefunItem sfItem = BlockStorage.check(block);
 
-        if (sfItem != null && sfItem.getId().equals("MA_MILITARY_MACHINE_FABRICATOR")) {
+        if (sfItem != null && MACHINE_ID.equals(sfItem.getId())) {
             Location blockLoc = block.getLocation();
 
-            for (int i = 0; i < 36; i++) {
+            for (int i = 0; i < GRID_SLOTS.length; i++) {
                 String key = "slot_" + i;
                 String itemData = BlockStorage.getLocationInfo(blockLoc, key);
                 if (itemData != null && !itemData.isEmpty()) {
