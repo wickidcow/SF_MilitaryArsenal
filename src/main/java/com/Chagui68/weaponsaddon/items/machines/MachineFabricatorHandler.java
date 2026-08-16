@@ -1,16 +1,17 @@
 package com.Chagui68.weaponsaddon.items.machines;
 
 import com.Chagui68.weaponsaddon.items.CustomRecipeItem;
+import com.Chagui68.weaponsaddon.utils.MachineSessionManager;
 import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItem;
 import com.github.drakescraft_labs.slimefun4.libraries.dough.items.CustomItemStack;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -18,11 +19,11 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.List;
-import java.util.ArrayList;
 
 import static org.bukkit.Bukkit.createInventory;
 
@@ -41,64 +42,75 @@ public class MachineFabricatorHandler implements Listener {
     }
 
     private static void openFabricatorGUI(Player p, Location blockLoc) {
-        Inventory inv = createInventory(null, 54, ChatColor.DARK_RED + "Machine Fabricator");
-
-        ItemStack background = new CustomItemStack(Material.BLACK_STAINED_GLASS_PANE, " ");
-        for (int i = 0; i < 54; i++) {
-            inv.setItem(i, background);
+        if (!MachineSessionManager.tryAcquire(p, blockLoc)) {
+            p.sendMessage(ChatColor.RED + "This machine is already in use. Close your current machine GUI and try again.");
+            return;
         }
 
-        ItemStack border = new CustomItemStack(Material.RED_STAINED_GLASS_PANE, ChatColor.DARK_RED + "▓");
-        int[] borderSlots = { 0, 7, 8, 9, 16, 17, 18, 25, 26, 27, 34, 35, 36, 43, 44, 45, 52, 53 };
-        for (int slot : borderSlots) {
-            inv.setItem(slot, border);
-        }
+        try {
+            Inventory inv = createInventory(null, 54, ChatColor.DARK_RED + "Machine Fabricator");
 
-        int[] gridSlots = {
-                1, 2, 3, 4, 5, 6,
-                10, 11, 12, 13, 14, 15,
-                19, 20, 21, 22, 23, 24,
-                28, 29, 30, 31, 32, 33,
-                37, 38, 39, 40, 41, 42,
-                46, 47, 48, 49, 50, 51
-        };
-
-        for (int i = 0; i < 36; i++) {
-            String itemData = BlockStorage.getLocationInfo(blockLoc, "slot_" + i);
-            if (itemData != null && !itemData.isEmpty()) {
-                ItemStack item = deserializeItemStack(itemData);
-                if (item != null) {
-                    inv.setItem(gridSlots[i], item);
-                }
-            } else {
-                inv.setItem(gridSlots[i], null);
+            ItemStack background = new CustomItemStack(Material.BLACK_STAINED_GLASS_PANE, " ");
+            for (int i = 0; i < 54; i++) {
+                inv.setItem(i, background);
             }
+
+            ItemStack border = new CustomItemStack(Material.RED_STAINED_GLASS_PANE, ChatColor.DARK_RED + "▓");
+            int[] borderSlots = { 0, 7, 8, 9, 16, 17, 18, 25, 26, 27, 34, 35, 36, 43, 44, 45, 52, 53 };
+            for (int slot : borderSlots) {
+                inv.setItem(slot, border);
+            }
+
+            int[] gridSlots = {
+                    1, 2, 3, 4, 5, 6,
+                    10, 11, 12, 13, 14, 15,
+                    19, 20, 21, 22, 23, 24,
+                    28, 29, 30, 31, 32, 33,
+                    37, 38, 39, 40, 41, 42,
+                    46, 47, 48, 49, 50, 51
+            };
+
+            for (int i = 0; i < 36; i++) {
+                String itemData = BlockStorage.getLocationInfo(blockLoc, "slot_" + i);
+                if (itemData != null && !itemData.isEmpty()) {
+                    ItemStack item = deserializeItemStack(itemData);
+                    if (item != null) {
+                        inv.setItem(gridSlots[i], item);
+                    }
+                } else {
+                    inv.setItem(gridSlots[i], null);
+                }
+            }
+
+            inv.setItem(8, new CustomItemStack(Material.LIME_STAINED_GLASS_PANE,
+                    ChatColor.GREEN + "⬇ RESULT ⬇",
+                    "",
+                    ChatColor.GRAY + "Place items in 6×6 grid",
+                    ChatColor.GRAY + "Click CRAFT button"));
+
+            inv.setItem(17, null);
+
+            inv.setItem(0, new CustomItemStack(Material.RESPAWN_ANCHOR,
+                    ChatColor.DARK_RED + "⚙ Machine Fabricator",
+                    "",
+                    ChatColor.RED + "6×6 Ultimate Crafting",
+                    ChatColor.GRAY + "For advanced machines",
+                    "",
+                    ChatColor.AQUA + "Grid: 36 slots (6×6)"));
+
+            inv.setItem(53, new CustomItemStack(Material.CRAFTING_TABLE,
+                    ChatColor.GREEN + "▶ CRAFT ◀",
+                    "",
+                    ChatColor.GRAY + "Click to craft machine",
+                    ChatColor.YELLOW + "Recipe must match exactly"));
+
+            openFabricators.put(p.getUniqueId(), blockLoc);
+            p.openInventory(inv);
+        } catch (RuntimeException ex) {
+            openFabricators.remove(p.getUniqueId());
+            MachineSessionManager.release(p);
+            throw ex;
         }
-
-        inv.setItem(8, new CustomItemStack(Material.LIME_STAINED_GLASS_PANE,
-                ChatColor.GREEN + "⬇ RESULT ⬇",
-                "",
-                ChatColor.GRAY + "Place items in 6×6 grid",
-                ChatColor.GRAY + "Click CRAFT button"));
-
-        inv.setItem(17, null);
-
-        inv.setItem(0, new CustomItemStack(Material.RESPAWN_ANCHOR,
-                ChatColor.DARK_RED + "⚙ Machine Fabricator",
-                "",
-                ChatColor.RED + "6×6 Ultimate Crafting",
-                ChatColor.GRAY + "For advanced machines",
-                "",
-                ChatColor.AQUA + "Grid: 36 slots (6×6)"));
-
-        inv.setItem(53, new CustomItemStack(Material.CRAFTING_TABLE,
-                ChatColor.GREEN + "▶ CRAFT ◀",
-                "",
-                ChatColor.GRAY + "Click to craft machine",
-                ChatColor.YELLOW + "Recipe must match exactly"));
-
-        p.openInventory(inv);
-        openFabricators.put(p.getUniqueId(), blockLoc);
     }
 
     @EventHandler
@@ -113,17 +125,21 @@ public class MachineFabricatorHandler implements Listener {
         if (blockLoc == null)
             return;
 
-        int[] gridSlots = { 1, 2, 3, 4, 5, 6, 10, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 24,
-                28, 29, 30, 31, 32, 33, 37, 38, 39, 40, 41, 42, 46, 47, 48, 49, 50, 51 };
-        Inventory inv = e.getInventory();
+        try {
+            int[] gridSlots = { 1, 2, 3, 4, 5, 6, 10, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 24,
+                    28, 29, 30, 31, 32, 33, 37, 38, 39, 40, 41, 42, 46, 47, 48, 49, 50, 51 };
+            Inventory inv = e.getInventory();
 
-        for (int i = 0; i < 36; i++) {
-            ItemStack item = inv.getItem(gridSlots[i]);
-            if (item != null && item.getType() != Material.AIR) {
-                BlockStorage.addBlockInfo(blockLoc, "slot_" + i, serializeItemStack(item));
-            } else {
-                BlockStorage.addBlockInfo(blockLoc, "slot_" + i, "");
+            for (int i = 0; i < 36; i++) {
+                ItemStack item = inv.getItem(gridSlots[i]);
+                if (item != null && item.getType() != Material.AIR) {
+                    BlockStorage.addBlockInfo(blockLoc, "slot_" + i, serializeItemStack(item));
+                } else {
+                    BlockStorage.addBlockInfo(blockLoc, "slot_" + i, "");
+                }
             }
+        } finally {
+            MachineSessionManager.release(p);
         }
     }
 
@@ -177,7 +193,6 @@ public class MachineFabricatorHandler implements Listener {
             System.out.println("Checkeando: " + customItem.getId());
 
             if (matchesRecipe(grid, recipe)) {
-                // Consumir items
                 for (int i = 0; i < 36; i++) {
                     ItemStack item = grid[i];
                     if (item != null && item.getType() != Material.AIR) {
@@ -190,8 +205,8 @@ public class MachineFabricatorHandler implements Listener {
 
                 ItemStack output = customItem.getItem().clone();
                 inv.setItem(17, output);
-                p.sendMessage(ChatColor.GREEN + "✓ Crafted: " + ChatColor.WHITE +
-                        ChatColor.stripColor(output.getItemMeta().getDisplayName()));
+                p.sendMessage(ChatColor.GREEN + "✓ Crafted: " + ChatColor.WHITE
+                        + ChatColor.stripColor(output.getItemMeta().getDisplayName()));
                 System.out.println("✓ CRAFTEO EXITOSO!");
                 return;
             }
@@ -228,7 +243,7 @@ public class MachineFabricatorHandler implements Listener {
         }
 
         if (sf1 == null && sf2 == null) {
-            return item1.getType() == item2.getType();
+            return item1.isSimilar(item2);
         }
 
         return false;
@@ -238,7 +253,7 @@ public class MachineFabricatorHandler implements Listener {
         return item == null || item.getType() == Material.AIR;
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {
         Block block = e.getBlock();
         SlimefunItem sfItem = BlockStorage.check(block);
@@ -247,12 +262,14 @@ public class MachineFabricatorHandler implements Listener {
             Location blockLoc = block.getLocation();
 
             for (int i = 0; i < 36; i++) {
-                String itemData = BlockStorage.getLocationInfo(blockLoc, "slot_" + i);
+                String key = "slot_" + i;
+                String itemData = BlockStorage.getLocationInfo(blockLoc, key);
                 if (itemData != null && !itemData.isEmpty()) {
                     ItemStack item = deserializeItemStack(itemData);
                     if (item != null) {
                         block.getWorld().dropItemNaturally(blockLoc, item);
                     }
+                    BlockStorage.addBlockInfo(blockLoc, key, "");
                 }
             }
         }
