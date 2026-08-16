@@ -1,5 +1,6 @@
 package com.Chagui68.weaponsaddon.utils;
 
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Registry;
@@ -234,5 +235,75 @@ public class VersionSafe {
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    /**
+     * Detects the Minecraft Java version currently running on the server.
+     * Returns a plain version string such as "1.21.11" or "unknown" when it cannot
+     * be determined.
+     */
+    public static String getMinecraftVersion() {
+        try {
+            String version = Bukkit.getMinecraftVersion();
+            if (version != null && !version.isBlank()) {
+                return version;
+            }
+        } catch (Throwable ignored) {
+            // Older Bukkit/Paper builds without Bukkit#getMinecraftVersion().
+        }
+
+        String bukkit = Bukkit.getBukkitVersion();
+        if (bukkit == null || bukkit.isBlank()) {
+            return "unknown";
+        }
+        int dash = bukkit.indexOf('-');
+        String version = dash > 0 ? bukkit.substring(0, dash) : bukkit;
+        return version.isBlank() ? "unknown" : version;
+    }
+
+    /**
+     * Checks whether the server is running the exact given Minecraft Java version,
+     * e.g. isMinecraft("1.21.11").
+     */
+    public static boolean isMinecraft(String version) {
+        return getMinecraftVersion().equalsIgnoreCase(version);
+    }
+
+    /**
+     * Checks whether the server is running the given Minecraft Java version or a
+     * newer one, e.g. isMinecraftAtLeast("1.21.11").
+     */
+    public static boolean isMinecraftAtLeast(String version) {
+        int[] current = parseVersion(getMinecraftVersion());
+        int[] required = parseVersion(version);
+        int max = Math.max(current.length, required.length);
+        for (int i = 0; i < max; i++) {
+            int a = i < current.length ? current[i] : 0;
+            int b = i < required.length ? required[i] : 0;
+            if (a != b) {
+                return a > b;
+            }
+        }
+        return true;
+    }
+
+    private static int[] parseVersion(String version) {
+        if (version == null) {
+            return new int[0];
+        }
+        String[] parts = version.split("\\.");
+        int[] result = new int[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            StringBuilder digits = new StringBuilder();
+            for (char c : parts[i].toCharArray()) {
+                if (Character.isDigit(c)) {
+                    digits.append(c);
+                } else {
+                    break;
+                }
+            }
+            result[i] = digits.length() == 0 ? 0 : Integer.parseInt(digits.toString());
+        }
+        return result;
     }
 }

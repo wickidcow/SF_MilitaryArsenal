@@ -10,7 +10,7 @@ description: Military Arsenal for Slimefun Legacy on Paper/Purpur 26.2+
 commands:
   weapons:
     description: Main command for Military Arsenal
-    usage: /weapons <delete|summon|give> <args>
+    usage: /weapons <delete|reload> <args>
     permission: militaryarsenal.admin
     permission-message: You don't have permission to use this command!
 
