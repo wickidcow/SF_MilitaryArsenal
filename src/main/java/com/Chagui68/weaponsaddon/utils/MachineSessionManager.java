@@ -68,7 +68,7 @@ public final class MachineSessionManager implements Listener {
         PLAYER_MACHINES.clear();
     }
 
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         if (!isLocked(event.getBlock().getLocation())) {
             return;
@@ -78,17 +78,17 @@ public final class MachineSessionManager implements Listener {
         event.getPlayer().sendMessage(ChatColor.RED + "This machine is currently in use. Close its GUI before breaking it.");
     }
 
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockExplode(BlockExplodeEvent event) {
         event.blockList().removeIf(block -> isLocked(block.getLocation()));
     }
 
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
         event.blockList().removeIf(block -> isLocked(block.getLocation()));
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onProtectedInventoryClick(InventoryClickEvent event) {
         if (!isProtectedInventoryTitle(event.getView().getTitle())) {
             return;
@@ -99,7 +99,7 @@ public final class MachineSessionManager implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onProtectedInventoryDrag(InventoryDragEvent event) {
         if (!isProtectedInventoryTitle(event.getView().getTitle())) {
             return;
