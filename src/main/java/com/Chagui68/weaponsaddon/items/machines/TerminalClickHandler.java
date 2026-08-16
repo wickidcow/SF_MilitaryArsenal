@@ -15,6 +15,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -43,6 +44,11 @@ public class TerminalClickHandler implements Listener {
 
         if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Bombardment Terminal"))
             return;
+
+        if (e.isShiftClick()) {
+            e.setCancelled(true);
+            return;
+        }
 
         Player p = (Player) e.getWhoClicked();
         int slot = e.getRawSlot();
@@ -118,6 +124,17 @@ public class TerminalClickHandler implements Listener {
         }
 
         if (slot < 27) {
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent e) {
+        if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Bombardment Terminal"))
+            return;
+
+        int topSize = e.getView().getTopInventory().getSize();
+        if (e.getRawSlots().stream().anyMatch(slot -> slot < topSize)) {
             e.setCancelled(true);
         }
     }
