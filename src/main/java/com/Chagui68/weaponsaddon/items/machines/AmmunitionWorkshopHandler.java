@@ -1,9 +1,8 @@
 package com.Chagui68.weaponsaddon.items.machines;
 
+import com.Chagui68.weaponsaddon.utils.MachineSessionManager;
 import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItem;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -23,7 +22,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.bukkit.Bukkit.createInventory;
-import static org.bukkit.ChatColor.*;
+import static org.bukkit.ChatColor.DARK_GRAY;
+import static org.bukkit.ChatColor.GOLD;
+import static org.bukkit.ChatColor.RED;
 
 public class AmmunitionWorkshopHandler implements Listener {
 
@@ -32,40 +33,50 @@ public class AmmunitionWorkshopHandler implements Listener {
     private static final int resultSlot = 23;
     private static final int craftButtonSlot = 25;
 
-    // MÉTODO ESTÁTICO PÚBLICO
     public static void openGuiStatic(Player p, Location loc) {
         openGui(p, loc);
     }
 
     private static void openGui(Player p, Location loc) {
-        Inventory inv = createInventory(null, 45, DARK_GRAY + "Ammunition Workshop");
-
-        ItemStack glass = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
-        ItemMeta glassMeta = glass.getItemMeta();
-        glassMeta.setDisplayName(" ");
-        glass.setItemMeta(glassMeta);
-
-        for (int i = 0; i < inv.getSize(); i++)
-            inv.setItem(i, glass);
-
-        for (int i = 0; i < gridSlots.length; i++) {
-            inv.setItem(gridSlots[i], null);
-            String data = BlockStorage.getLocationInfo(loc, "slot_" + i);
-            if (data != null && !data.isEmpty())
-                inv.setItem(gridSlots[i], deserializeItemStack(data));
+        if (!MachineSessionManager.tryAcquire(p, loc)) {
+            p.sendMessage(RED + "This machine is already in use. Close your current machine GUI and try again.");
+            return;
         }
 
-        String resData = BlockStorage.getLocationInfo(loc, "result_slot");
-        inv.setItem(resultSlot, (resData != null && !resData.isEmpty()) ? deserializeItemStack(resData) : null);
+        try {
+            Inventory inv = createInventory(null, 45, DARK_GRAY + "Ammunition Workshop");
 
-        ItemStack anvil = new ItemStack(Material.ANVIL);
-        ItemMeta anvilMeta = anvil.getItemMeta();
-        anvilMeta.setDisplayName(GOLD + "Click to Craft");
-        anvil.setItemMeta(anvilMeta);
-        inv.setItem(craftButtonSlot, anvil);
+            ItemStack glass = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+            ItemMeta glassMeta = glass.getItemMeta();
+            glassMeta.setDisplayName(" ");
+            glass.setItemMeta(glassMeta);
 
-        p.openInventory(inv);
-        openWorkshops.put(p.getUniqueId(), loc);
+            for (int i = 0; i < inv.getSize(); i++)
+                inv.setItem(i, glass);
+
+            for (int i = 0; i < gridSlots.length; i++) {
+                inv.setItem(gridSlots[i], null);
+                String data = BlockStorage.getLocationInfo(loc, "slot_" + i);
+                if (data != null && !data.isEmpty())
+                    inv.setItem(gridSlots[i], deserializeItemStack(data));
+            }
+
+            String resData = BlockStorage.getLocationInfo(loc, "result_slot");
+            inv.setItem(resultSlot, (resData != null && !resData.isEmpty()) ? deserializeItemStack(resData) : null);
+
+            ItemStack anvil = new ItemStack(Material.ANVIL);
+            ItemMeta anvilMeta = anvil.getItemMeta();
+            anvilMeta.setDisplayName(GOLD + "Click to Craft");
+            anvil.setItemMeta(anvilMeta);
+            inv.setItem(craftButtonSlot, anvil);
+
+            openWorkshops.put(p.getUniqueId(), loc);
+            p.openInventory(inv);
+        } catch (RuntimeException ex) {
+            openWorkshops.remove(p.getUniqueId());
+            MachineSessionManager.release(p);
+            throw ex;
+        }
     }
 
     @EventHandler
@@ -133,15 +144,15 @@ public class AmmunitionWorkshopHandler implements Listener {
     }
 
     private boolean matchesAmmoRecipe(ItemStack[] grid) {
-        return isMaterial(grid[1], Material.COPPER_INGOT) &&
-                isMaterial(grid[3], Material.IRON_INGOT) &&
-                isMaterial(grid[4], Material.GUNPOWDER) &&
-                isMaterial(grid[5], Material.IRON_INGOT) &&
-                isMaterial(grid[7], Material.IRON_NUGGET);
+        return isPlainMaterial(grid[1], Material.COPPER_INGOT)
+                && isPlainMaterial(grid[3], Material.IRON_INGOT)
+                && isPlainMaterial(grid[4], Material.GUNPOWDER)
+                && isPlainMaterial(grid[5], Material.IRON_INGOT)
+                && isPlainMaterial(grid[7], Material.IRON_NUGGET);
     }
 
-    private boolean isMaterial(ItemStack item, Material type) {
-        return item != null && item.getType() == type;
+    private boolean isPlainMaterial(ItemStack item, Material type) {
+        return item != null && item.isSimilar(new ItemStack(type));
     }
 
     @EventHandler
@@ -152,12 +163,14 @@ public class AmmunitionWorkshopHandler implements Listener {
             return;
 
         Player p = (Player) e.getPlayer();
-        UUID uuid = p.getUniqueId();
+        Location loc = openWorkshops.remove(p.getUniqueId());
+        if (loc == null)
+            return;
 
-        if (openWorkshops.containsKey(uuid)) {
-            Location loc = openWorkshops.get(uuid);
+        try {
             saveInventory(e.getInventory(), loc);
-            openWorkshops.remove(uuid);
+        } finally {
+            MachineSessionManager.release(p);
         }
     }
 
@@ -170,11 +183,13 @@ public class AmmunitionWorkshopHandler implements Listener {
             e.setDropItems(false);
 
             for (int i = 0; i < gridSlots.length; i++) {
-                String data = BlockStorage.getLocationInfo(loc, "slot_" + i);
+                String key = "slot_" + i;
+                String data = BlockStorage.getLocationInfo(loc, key);
                 if (data != null && !data.isEmpty()) {
                     ItemStack item = deserializeItemStack(data);
                     if (item != null)
                         loc.getWorld().dropItemNaturally(loc, item);
+                    BlockStorage.addBlockInfo(loc, key, "");
                 }
             }
 
@@ -183,9 +198,8 @@ public class AmmunitionWorkshopHandler implements Listener {
                 ItemStack item = deserializeItemStack(resData);
                 if (item != null)
                     loc.getWorld().dropItemNaturally(loc, item);
+                BlockStorage.addBlockInfo(loc, "result_slot", "");
             }
-
-            BlockStorage.clearBlockInfo(loc);
         }
     }
 
