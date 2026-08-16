@@ -33,6 +33,7 @@ import com.Chagui68.weaponsaddon.commands.WeaponsCommand;
 import com.Chagui68.weaponsaddon.listeners.SlimefunGuideListener;
 import com.Chagui68.weaponsaddon.handlers.InventoryEffectHandler;
 import com.Chagui68.weaponsaddon.items.armor.VoidSuitPiece;
+import com.Chagui68.weaponsaddon.utils.MachineSessionManager;
 import com.github.drakescraft_labs.slimefun4.api.SlimefunAddon;
 import com.github.drakescraft_labs.slimefun4.api.items.groups.NestedItemGroup;
 import com.github.drakescraft_labs.slimefun4.api.items.groups.SubItemGroup;
@@ -288,6 +289,7 @@ public class WeaponsAddon extends JavaPlugin implements SlimefunAddon {
         }
 
         // Register listeners
+        getServer().getPluginManager().registerEvents(new MachineSessionManager(), this);
         getServer().getPluginManager().registerEvents(new SlimefunGuideListener(), this);
         getServer().getPluginManager().registerEvents(new RecipeViewerGUI(), this);
         getServer().getPluginManager().registerEvents(new ComponentsHandler(), this);
@@ -302,7 +304,6 @@ public class WeaponsAddon extends JavaPlugin implements SlimefunAddon {
         getServer().getPluginManager().registerEvents(new TurretUpgradeGUI(), this);
 
         // Register commands
-
         WeaponsCommand weaponsCommand = new WeaponsCommand();
         getCommand("weapons").setExecutor(weaponsCommand);
         getCommand("weapons").setTabCompleter(weaponsCommand);
@@ -312,6 +313,7 @@ public class WeaponsAddon extends JavaPlugin implements SlimefunAddon {
 
     @Override
     public void onDisable() {
+        MachineSessionManager.clear();
         AttackTurret.cleanupAllModels();
         SniperTurret.cleanupAllModels();
         MeleeTurret.cleanupAllModels();
