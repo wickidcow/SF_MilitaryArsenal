@@ -1,3 +1,9 @@
 # ==========================================
 # Military Arsenal - General Configuration
 # ==========================================
+
+# Bombardment security limits.
+# Targets must also be inside the world border and in an already-loaded chunk.
+bombardment:
+  max_horizontal_range: 256
+  cooldown_seconds: 30
