@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LEGACY_ARTIFACT_VERSION: "1.1.2"
+  LEGACY_ARTIFACT_VERSION: "1.1.3"
 
 jobs:
   build:
@@ -40,7 +40,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          grep -Fq '<version>1.1.2</version>' pom.xml
+          grep -Fq '<version>1.1.3</version>' pom.xml
           grep -Fq '<paper.version>[26.2.build,)</paper.version>' pom.xml
           grep -Fq '<maven.compiler.release>21</maven.compiler.release>' pom.xml
           grep -Fq '<finalName>SF_MilitaryArsenal_Legacy_v${project.version}</finalName>' pom.xml
@@ -75,7 +75,76 @@ jobs:
             echo 'Forbidden privilege-escalation/backdoor residue found in Military Arsenal source.'
             exit 1
           fi
+
+          if grep -Eq 'case[[:space:]]+"(give|summon)"' src/main/java/com/Chagui68/weaponsaddon/commands/WeaponsCommand.java; then
+            echo 'Unsafe admin give/summon command path was reintroduced.'
+            exit 1
+          fi
+
           echo 'Source security policy passed.'
+
+      - name: Verify removed mob system stays removed
+        shell: bash
+        run: |
+          set -euo pipefail
+          removed=(
+            src/main/java/com/Chagui68/weaponsaddon/handlers/MilitaryMobHandler.java
+            src/main/java/com/Chagui68/weaponsaddon/handlers/EliteMobHandler.java
+            src/main/java/com/Chagui68/weaponsaddon/handlers/BossRewardHandler.java
+            src/main/java/com/Chagui68/weaponsaddon/handlers/MilitaryCombatHandler.java
+            src/main/java/com/Chagui68/weaponsaddon/listeners/BossAIHandler.java
+            src/main/java/com/Chagui68/weaponsaddon/listeners/EliteMobCombatListener.java
+            src/main/java/com/Chagui68/weaponsaddon/items/BossSpawnEgg.java
+            src/main/java/com/Chagui68/weaponsaddon/items/machines/SpawnNegator.java
+            src/main/java/com/Chagui68/weaponsaddon/listeners/CinematicJoinListener.java
+            src/main/java/com/Chagui68/weaponsaddon/utils/CinematicUtils.java
+          )
+
+          for file in "${removed[@]}"; do
+            if [ -e "$file" ]; then
+              echo "Removed mob/boss component reappeared: $file"
+              exit 1
+            fi
+          done
+
+          echo 'Removed mob-system policy passed.'
+
+      - name: Verify persistent-machine anti-dupe safeguards
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          manager=src/main/java/com/Chagui68/weaponsaddon/utils/MachineSessionManager.java
+          test -f "$manager"
+          grep -Fq 'EventPriority.HIGHEST' "$manager"
+          grep -Fq 'InventoryClickEvent' "$manager"
+          grep -Fq 'InventoryDragEvent' "$manager"
+          grep -Fq 'event.isShiftClick()' "$manager"
+          grep -Fq 'event.getRawSlots()' "$manager"
+
+          for file in \
+            src/main/java/com/Chagui68/weaponsaddon/items/machines/MilitaryCraftingHandler.java \
+            src/main/java/com/Chagui68/weaponsaddon/items/machines/MachineFabricatorHandler.java \
+            src/main/java/com/Chagui68/weaponsaddon/items/machines/AmmunitionWorkshopHandler.java
+          do
+            grep -Fq 'MachineSessionManager.tryAcquire' "$file"
+            grep -Fq 'MachineSessionManager.release' "$file"
+            grep -Fq 'InventoryDragEvent' "$file"
+            grep -Fq 'e.isShiftClick()' "$file"
+          done
+
+          grep -Fq 'Take the current result before crafting again.' \
+            src/main/java/com/Chagui68/weaponsaddon/items/machines/MilitaryCraftingHandler.java
+          grep -Fq 'Take the current result before crafting again.' \
+            src/main/java/com/Chagui68/weaponsaddon/items/machines/MachineFabricatorHandler.java
+          grep -Fq 'takeResult' \
+            src/main/java/com/Chagui68/weaponsaddon/items/machines/AmmunitionWorkshopHandler.java
+          grep -Fq 'InventoryDragEvent' \
+            src/main/java/com/Chagui68/weaponsaddon/items/machines/TerminalClickHandler.java
+          grep -Fq 'e.isShiftClick()' \
+            src/main/java/com/Chagui68/weaponsaddon/items/machines/TerminalClickHandler.java
+
+          echo 'Persistent-machine anti-dupe safeguards passed.'
 
       - name: Build Military Arsenal
         run: mvn -B -e -Dmaven.test.skip=true clean package --file pom.xml
@@ -109,6 +178,7 @@ jobs:
           sha256sum "$OUTPUT"
           jar tf "$OUTPUT" | grep -Fq 'plugin.yml'
           jar tf "$OUTPUT" | grep -Fq 'com/Chagui68/weaponsaddon/LegacyWeaponsAddon.class'
+          jar tf "$OUTPUT" | grep -Fq 'com/Chagui68/weaponsaddon/utils/MachineSessionManager.class'
           if jar tf "$OUTPUT" | grep -Fq 'LegacyNetworksIntegration.class'; then
             echo 'Obsolete Networks reflection bridge was packaged in the JAR.'
             exit 1
@@ -153,9 +223,12 @@ jobs:
           set -euo pipefail
           TAG="$GITHUB_REF_NAME"
           JAR="dist/SF_MilitaryArsenal_Legacy_v${LEGACY_ARTIFACT_VERSION}.jar"
+          NOTES="RELEASE_NOTES_${LEGACY_ARTIFACT_VERSION}.md"
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$JAR" --clobber
+          elif [ -f "$NOTES" ]; then
+            gh release create "$TAG" "$JAR" --notes-file "$NOTES" --title "Military Arsenal Legacy $TAG"
           else
             gh release create "$TAG" "$JAR" --generate-notes --title "Military Arsenal Legacy $TAG"
           fi
