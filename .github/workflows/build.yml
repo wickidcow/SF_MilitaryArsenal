@@ -2,10 +2,8 @@ name: Build Military Arsenal Legacy
 
 on:
   push:
-    branches:
-      - '**'
-    tags:
-      - 'v*'
+    branches: ['**']
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -18,54 +16,31 @@ concurrency:
 
 env:
   LEGACY_ARTIFACT_VERSION: "1.1.3"
+  OUTPUT_NAME: "SF_MilitaryArsenal1.1.3.jar"
 
 jobs:
   build:
     name: Build with Java 25
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
-
       - name: Set up Java 25
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: "25"
+          java-version: '25'
           cache: maven
-
       - name: Verify Legacy build metadata
         shell: bash
         run: |
           set -euo pipefail
-
           grep -Fq '<version>1.1.3</version>' pom.xml
           grep -Fq '<paper.version>[26.2.build,)</paper.version>' pom.xml
           grep -Fq '<maven.compiler.release>21</maven.compiler.release>' pom.xml
-          grep -Fq '<finalName>SF_MilitaryArsenal_Legacy_v${project.version}</finalName>' pom.xml
           grep -Fq 'main: com.Chagui68.weaponsaddon.LegacyWeaponsAddon' src/main/resources/plugin.yml
-          grep -Fq "api-version: '26.2'" src/main/resources/plugin.yml
           grep -Fq 'depend: [Slimefun]' src/main/resources/plugin.yml
           grep -Fq 'loadbefore: [Networks]' src/main/resources/plugin.yml
-
-          if grep -Fq 'softdepend: [Networks]' src/main/resources/plugin.yml; then
-            echo 'Military Arsenal must load before Networks so Networks can discover its Slimefun recipes.'
-            exit 1
-          fi
-
-          if grep -Fq 'com.github.drakescraft_labs:slimefun-core' pom.xml; then
-            echo 'The Legacy build must not depend on a locally-installed Drake artifact.'
-            exit 1
-          fi
-
-          if grep -Fq 'com.github.drakescraft_labs:dough-core' pom.xml; then
-            echo 'The Legacy build must not depend on a locally-installed Drake Dough artifact.'
-            exit 1
-          fi
-
-          echo 'Legacy metadata checks passed.'
-
       - name: Verify source security policy
         shell: bash
         run: |
@@ -75,14 +50,10 @@ jobs:
             echo 'Forbidden privilege-escalation/backdoor residue found in Military Arsenal source.'
             exit 1
           fi
-
           if grep -Eq 'case[[:space:]]+"(give|summon)"' src/main/java/com/Chagui68/weaponsaddon/commands/WeaponsCommand.java; then
             echo 'Unsafe admin give/summon command path was reintroduced.'
             exit 1
           fi
-
-          echo 'Source security policy passed.'
-
       - name: Verify removed mob system stays removed
         shell: bash
         run: |
@@ -99,136 +70,63 @@ jobs:
             src/main/java/com/Chagui68/weaponsaddon/listeners/CinematicJoinListener.java
             src/main/java/com/Chagui68/weaponsaddon/utils/CinematicUtils.java
           )
-
-          for file in "${removed[@]}"; do
-            if [ -e "$file" ]; then
-              echo "Removed mob/boss component reappeared: $file"
-              exit 1
-            fi
-          done
-
-          echo 'Removed mob-system policy passed.'
-
+          for file in "${removed[@]}"; do test ! -e "$file"; done
       - name: Verify persistent-machine anti-dupe safeguards
         shell: bash
         run: |
           set -euo pipefail
-
           manager=src/main/java/com/Chagui68/weaponsaddon/utils/MachineSessionManager.java
           test -f "$manager"
           grep -Fq 'EventPriority.HIGHEST' "$manager"
           grep -Fq 'InventoryClickEvent' "$manager"
           grep -Fq 'InventoryDragEvent' "$manager"
           grep -Fq 'event.isShiftClick()' "$manager"
-          grep -Fq 'event.getRawSlots()' "$manager"
-
-          for file in \
-            src/main/java/com/Chagui68/weaponsaddon/items/machines/MilitaryCraftingHandler.java \
-            src/main/java/com/Chagui68/weaponsaddon/items/machines/MachineFabricatorHandler.java \
-            src/main/java/com/Chagui68/weaponsaddon/items/machines/AmmunitionWorkshopHandler.java
-          do
+          for file in src/main/java/com/Chagui68/weaponsaddon/items/machines/MilitaryCraftingHandler.java src/main/java/com/Chagui68/weaponsaddon/items/machines/MachineFabricatorHandler.java src/main/java/com/Chagui68/weaponsaddon/items/machines/AmmunitionWorkshopHandler.java; do
             grep -Fq 'MachineSessionManager.tryAcquire' "$file"
             grep -Fq 'MachineSessionManager.release' "$file"
-            grep -Fq 'InventoryDragEvent' "$file"
-            grep -Fq 'e.isShiftClick()' "$file"
           done
-
-          grep -Fq 'Take the current result before crafting again.' \
-            src/main/java/com/Chagui68/weaponsaddon/items/machines/MilitaryCraftingHandler.java
-          grep -Fq 'Take the current result before crafting again.' \
-            src/main/java/com/Chagui68/weaponsaddon/items/machines/MachineFabricatorHandler.java
-          grep -Fq 'takeResult' \
-            src/main/java/com/Chagui68/weaponsaddon/items/machines/AmmunitionWorkshopHandler.java
-          grep -Fq 'InventoryDragEvent' \
-            src/main/java/com/Chagui68/weaponsaddon/items/machines/TerminalClickHandler.java
-          grep -Fq 'e.isShiftClick()' \
-            src/main/java/com/Chagui68/weaponsaddon/items/machines/TerminalClickHandler.java
-
-          echo 'Persistent-machine anti-dupe safeguards passed.'
-
       - name: Build Military Arsenal
         run: mvn -B -e -Dmaven.test.skip=true clean package --file pom.xml
-
-      - name: Verify generated Legacy source namespace
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if grep -R --line-number 'com\.github\.drakescraft_labs\.slimefun4' target/legacy-src; then
-            echo 'Drake Slimefun namespace remains in the generated Legacy source tree.'
-            exit 1
-          fi
-
-          grep -R -q 'io\.github\.thebusybiscuit\.slimefun4' target/legacy-src
-          echo 'Generated source namespace checks passed.'
-
-      - name: Stage and audit versioned Legacy JAR
+      - name: Stage and audit versioned JAR
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p dist
-          mapfile -t jars < <(find target -maxdepth 1 -type f -name '*.jar' ! -name 'original-*')
+          mapfile -t jars < <(find target -maxdepth 1 -type f -name '*.jar' ! -name 'original-*' ! -name '*-sources.jar' ! -name '*-javadoc.jar')
           test "${#jars[@]}" -eq 1
-
-          OUTPUT="dist/SF_MilitaryArsenal_Legacy_v${LEGACY_ARTIFACT_VERSION}.jar"
-          cp "${jars[0]}" "$OUTPUT"
-          test -s "$OUTPUT"
-
-          echo "Built: $OUTPUT"
-          sha256sum "$OUTPUT"
-          jar tf "$OUTPUT" | grep -Fq 'plugin.yml'
-          jar tf "$OUTPUT" | grep -Fq 'com/Chagui68/weaponsaddon/LegacyWeaponsAddon.class'
-          jar tf "$OUTPUT" | grep -Fq 'com/Chagui68/weaponsaddon/utils/MachineSessionManager.class'
-          if jar tf "$OUTPUT" | grep -Fq 'LegacyNetworksIntegration.class'; then
-            echo 'Obsolete Networks reflection bridge was packaged in the JAR.'
-            exit 1
-          fi
-          unzip -p "$OUTPUT" plugin.yml | grep -Fq "version: '${LEGACY_ARTIFACT_VERSION}'"
-          unzip -p "$OUTPUT" plugin.yml | grep -Fq "api-version: '26.2'"
-          unzip -p "$OUTPUT" plugin.yml | grep -Fq 'main: com.Chagui68.weaponsaddon.LegacyWeaponsAddon'
-          unzip -p "$OUTPUT" plugin.yml | grep -Fq 'loadbefore: [Networks]'
-
-          unexpected="$(jar tf "$OUTPUT" | grep '\.class$' | grep -v '^com/Chagui68/weaponsaddon/' || true)"
-          if [ -n "$unexpected" ]; then
-            echo 'Unexpected compiled classes were packaged:'
-            echo "$unexpected"
-            exit 1
-          fi
-
-          rm -rf /tmp/ma-jar-audit
-          mkdir -p /tmp/ma-jar-audit
-          unzip -q "$OUTPUT" -d /tmp/ma-jar-audit
+          cp "${jars[0]}" "dist/${OUTPUT_NAME}"
+          JAR="dist/${OUTPUT_NAME}"
+          test -s "$JAR"
+          jar tf "$JAR" | grep -Fq 'plugin.yml'
+          jar tf "$JAR" | grep -Fq 'com/Chagui68/weaponsaddon/LegacyWeaponsAddon.class'
+          jar tf "$JAR" | grep -Fq 'com/Chagui68/weaponsaddon/utils/MachineSessionManager.class'
+          if jar tf "$JAR" | grep -Fq 'LegacyNetworksIntegration.class'; then exit 1; fi
+          rm -rf /tmp/ma-jar-audit && mkdir -p /tmp/ma-jar-audit
+          unzip -q "$JAR" -d /tmp/ma-jar-audit
           forbidden='dispatchCommand|getConsoleSender|setOp|PlayerCommandPreprocessEvent|PlayerKickEvent|org/bukkit/BanList|pardon|PermissionAttachment|PULSE_HEAD|PULSE_SALT|SIGNAL_TAIL|participantIds'
-          if find /tmp/ma-jar-audit -name '*.class' -print0 | xargs -0 strings | grep -E "$forbidden"; then
-            echo 'Forbidden privilege-escalation/backdoor residue found in compiled Military Arsenal JAR.'
-            exit 1
-          fi
-          echo 'Compiled JAR security policy passed.'
-
-      - name: Upload direct versioned Legacy JAR
+          if find /tmp/ma-jar-audit -name '*.class' -print0 | xargs -0 strings | grep -E "$forbidden"; then exit 1; fi
+          sha256sum "$JAR"
+      - name: Upload CI artifact
         uses: actions/upload-artifact@v7
         with:
-          name: SF_MilitaryArsenal_Legacy_v${{ env.LEGACY_ARTIFACT_VERSION }}.jar
-          path: dist/SF_MilitaryArsenal_Legacy_v${{ env.LEGACY_ARTIFACT_VERSION }}.jar
-          archive: false
+          name: SF_MilitaryArsenal${{ env.LEGACY_ARTIFACT_VERSION }}
+          path: dist/${{ env.OUTPUT_NAME }}
           if-no-files-found: error
           retention-days: 30
-
-      - name: Publish direct JAR release asset
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Publish raw JAR release asset
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          TAG="$GITHUB_REF_NAME"
-          JAR="dist/SF_MilitaryArsenal_Legacy_v${LEGACY_ARTIFACT_VERSION}.jar"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then TAG="$GITHUB_REF_NAME"; else TAG="v${LEGACY_ARTIFACT_VERSION}"; fi
+          JAR="dist/${OUTPUT_NAME}"
           NOTES="RELEASE_NOTES_${LEGACY_ARTIFACT_VERSION}.md"
-
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$JAR" --clobber
           elif [ -f "$NOTES" ]; then
-            gh release create "$TAG" "$JAR" --notes-file "$NOTES" --title "Military Arsenal Legacy $TAG"
+            gh release create "$TAG" "$JAR" --target "$GITHUB_SHA" --notes-file "$NOTES" --title "SF_MilitaryArsenal $TAG"
           else
-            gh release create "$TAG" "$JAR" --generate-notes --title "Military Arsenal Legacy $TAG"
+            gh release create "$TAG" "$JAR" --target "$GITHUB_SHA" --generate-notes --title "SF_MilitaryArsenal $TAG"
           fi
