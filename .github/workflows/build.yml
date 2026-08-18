@@ -106,6 +106,12 @@ jobs:
           forbidden='dispatchCommand|getConsoleSender|setOp|PlayerCommandPreprocessEvent|PlayerKickEvent|org/bukkit/BanList|pardon|PermissionAttachment|PULSE_HEAD|PULSE_SALT|SIGNAL_TAIL|participantIds'
           if find /tmp/ma-jar-audit -name '*.class' -print0 | xargs -0 strings | grep -E "$forbidden"; then exit 1; fi
           sha256sum "$JAR"
+      - name: Upload raw JAR artifact
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/${{ env.OUTPUT_NAME }}
+          archive: false
+          if-no-files-found: error
       - name: Publish raw JAR release asset
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         env:
