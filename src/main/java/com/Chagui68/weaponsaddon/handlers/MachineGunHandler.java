@@ -1,5 +1,8 @@
 package com.Chagui68.weaponsaddon.handlers;
 
+import com.Chagui68.weaponsaddon.WeaponsAddon;
+import com.Chagui68.weaponsaddon.protection.ProtectionService;
+import com.Chagui68.weaponsaddon.utils.WeaponUtils;
 import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItem;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -13,10 +16,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
-import com.Chagui68.weaponsaddon.utils.WeaponUtils;
 import org.bukkit.util.Vector;
 
-import com.Chagui68.weaponsaddon.WeaponsAddon;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -27,7 +28,7 @@ public class MachineGunHandler implements Listener {
     private static final int BURST_SIZE = 5;
     private static final long COOLDOWN_TICKS = 40;
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
@@ -38,6 +39,12 @@ public class MachineGunHandler implements Listener {
         SlimefunItem sfItem = SlimefunItem.getByItem(item);
         if (sfItem == null || !sfItem.getId().equals("MA_MACHINE_GUN"))
             return;
+
+        if (event.getClickedBlock() != null && !ProtectionService.canUse(player, event.getClickedBlock().getLocation())) {
+            ProtectionService.deny(player, "weapon use");
+            event.setCancelled(true);
+            return;
+        }
 
         event.setCancelled(true);
 
@@ -81,12 +88,10 @@ public class MachineGunHandler implements Listener {
                 Location eyeLoc = player.getEyeLocation();
                 Vector direction = eyeLoc.getDirection();
 
-                // All Bukkit API calls must be on main thread
                 player.getWorld().playSound(eyeLoc, Sound.ENTITY_BLAZE_SHOOT, 2.0f, 1.5f);
                 eyeLoc.getWorld().spawnParticle(Particle.FLAME, eyeLoc, 5, 0.1, 0.1, 0.1, 0.02);
                 eyeLoc.getWorld().spawnParticle(Particle.SMOKE, eyeLoc, 10, 0.1, 0.1, 0.1, 0.05);
 
-                // Raycast for bullet hit detection
                 Location currentLoc = eyeLoc.clone();
                 for (int i = 0; i < 50; i++) {
                     currentLoc.add(direction.clone().multiply(0.5));
@@ -98,10 +103,12 @@ public class MachineGunHandler implements Listener {
                     for (Entity entity : currentLoc.getWorld().getNearbyEntities(currentLoc, 0.5, 0.5, 0.5)) {
                         if (entity instanceof LivingEntity && entity != player) {
                             LivingEntity target = (LivingEntity) entity;
-                            // Base damage of Diamond Hoe (5.0) + PDC bonuses + Enchantments
-                            double finalDamage = WeaponUtils.calculateDamage(item, 5.0, target);
+                            if (!ProtectionService.canDamage(player, target)) {
+                                ProtectionService.deny(player, "weapon damage");
+                                return;
+                            }
 
-                            // Reset invincibility frames for rapid fire application
+                            double finalDamage = WeaponUtils.calculateDamage(item, 5.0, target);
                             target.setNoDamageTicks(0);
                             target.damage(finalDamage, player);
                             target.getWorld().spawnParticle(Particle.ENCHANTED_HIT,
