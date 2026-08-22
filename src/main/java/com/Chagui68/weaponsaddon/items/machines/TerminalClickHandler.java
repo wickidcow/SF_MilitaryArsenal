@@ -2,6 +2,7 @@ package com.Chagui68.weaponsaddon.items.machines;
 
 import com.Chagui68.weaponsaddon.WeaponsAddon;
 import com.Chagui68.weaponsaddon.items.machines.energy.EnergyManager;
+import com.Chagui68.weaponsaddon.protection.ProtectionService;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -66,6 +67,11 @@ public class TerminalClickHandler implements Listener {
                 return;
             }
 
+            if (!ProtectionService.canUse(p, terminalLoc)) {
+                ProtectionService.deny(p, "terminal use");
+                return;
+            }
+
             if (awaitingCoordinates.containsKey(p.getUniqueId())) {
                 p.sendMessage(ChatColor.RED + "[Terminal] You already have a paid bombardment awaiting coordinates.");
                 return;
@@ -119,7 +125,7 @@ public class TerminalClickHandler implements Listener {
             p.sendMessage(ChatColor.GRAY + " • 5 Nether Stars");
             p.sendMessage(ChatColor.AQUA + " • 2,000,000 J energy");
             p.sendMessage(ChatColor.YELLOW + "→ [Terminal] Enter coordinates: X Y Z");
-            p.sendMessage(ChatColor.GRAY + "Target must be in the terminal's world, within the configured range, and already loaded.");
+            p.sendMessage(ChatColor.GRAY + "Target must be in the terminal's world, within range, loaded, and allowed by land protection.");
             return;
         }
 
@@ -216,6 +222,11 @@ public class TerminalClickHandler implements Listener {
             return;
         }
 
+        if (!ProtectionService.canUse(p, terminalLoc)) {
+            ProtectionService.deny(p, "terminal use");
+            return;
+        }
+
         World world = terminalLoc.getWorld();
         if (world == null) {
             p.sendMessage(ChatColor.RED + "[Terminal] Terminal world is unavailable.");
@@ -251,6 +262,12 @@ public class TerminalClickHandler implements Listener {
         int chunkZ = z >> 4;
         if (!world.isChunkLoaded(chunkX, chunkZ)) {
             p.sendMessage(ChatColor.RED + "[Terminal] Target chunk is not loaded. Airstrikes cannot force-load remote chunks.");
+            awaitingCoordinates.put(p.getUniqueId(), terminalLoc);
+            return;
+        }
+
+        if (!ProtectionService.canBombard(p, target)) {
+            ProtectionService.deny(p, "bombardment");
             awaitingCoordinates.put(p.getUniqueId(), terminalLoc);
             return;
         }
