@@ -3,6 +3,7 @@ package com.Chagui68.weaponsaddon.items.turrets;
 import com.Chagui68.weaponsaddon.WeaponsAddon;
 import com.Chagui68.weaponsaddon.items.CustomRecipeItem;
 import com.Chagui68.weaponsaddon.items.machines.energy.EnergyManager;
+import com.Chagui68.weaponsaddon.protection.ProtectionService;
 import com.Chagui68.weaponsaddon.utils.TurretUtils;
 import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItem;
 import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItemStack;
@@ -63,25 +64,15 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
     }
 
     protected abstract String getTurretId();
-
     protected abstract String getHitboxTag();
-
     protected abstract String getStructurePrefix();
-
     protected abstract double getBaseRange();
-
     protected abstract double getBaseDamage();
-
     protected abstract int getBaseEnergyCapacity();
-
     protected abstract int getEnergyPerShot();
-
     protected abstract SlimefunItemStack getTurretItem();
-
     protected abstract int getShotCooldown();
-
     protected abstract void onShootEffects(Location baseLoc, Location muzzle, LivingEntity target, double range);
-
     protected abstract void onStructurePlaced(Location loc);
 
     @Nonnull
@@ -92,8 +83,6 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
 
     @Override
     public int getCapacity() {
-        // Slimefun exposes one item-wide capacity value, so advertise the maximum
-        // progression capacity and clamp the real stored charge per block in tick().
         int maxLevel = TurretUpgradeManager.getMaxLevel(getTurretId());
         return TurretUpgradeManager.getCapacityForLevel(getBaseEnergyCapacity(), maxLevel);
     }
@@ -123,8 +112,20 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
         addItemHandler(new BlockPlaceHandler(false) {
             @Override
             public void onPlayerPlace(@Nonnull BlockPlaceEvent e) {
+                if (e.isCancelled()) {
+                    return;
+                }
+
                 Location loc = e.getBlock().getLocation();
                 String structure = TurretStructureManager.getStructureName(getStructurePrefix(), 1);
+
+                // Turrets perform direct multiblock world writes. On Towny servers we
+                // only permit them where the entire conservative footprint is buildable.
+                if (!isStructureSafeForPlayer(e.getPlayer(), loc, structure)) {
+                    e.setCancelled(true);
+                    ProtectionService.deny(e.getPlayer(), "turret placement");
+                    return;
+                }
 
                 if (!TurretStructureManager.canPlaceStructure(loc, structure, null)) {
                     e.setCancelled(true);
@@ -152,12 +153,19 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
         addItemHandler(new BlockBreakHandler(false, false) {
             @Override
             public void onPlayerBreak(BlockBreakEvent e, ItemStack item, List<ItemStack> drops) {
+                if (e.isCancelled() || !ProtectionService.canDestroy(e.getPlayer(), e.getBlock().getLocation())) {
+                    e.setCancelled(true);
+                    return;
+                }
                 dismantle(e.getBlock().getLocation());
             }
 
             @Override
             public void onExplode(Block b, List<ItemStack> drops) {
-                dismantle(b.getLocation());
+                // Never let an automated/direct teardown mutate a claimed Towny area.
+                if (ProtectionService.canAutomateWorldChange(b.getLocation())) {
+                    dismantle(b.getLocation());
+                }
             }
         });
 
@@ -176,13 +184,18 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
 
     protected void tick(Block b) {
         Location loc = b.getLocation();
+
+        // A ticker has no player actor. Fail closed in Towny claims: no auto-repair,
+        // no direct structure writes and no autonomous turret firing there.
+        if (!ProtectionService.canAutomateWorldChange(loc)) {
+            return;
+        }
+
         int level = TurretUpgradeManager.getCurrentLevel(loc);
         String structure = TurretStructureManager.getStructureName(getStructurePrefix(), level);
 
         if (!TurretStructureManager.isStructureIntact(loc, structure)
                 && !TurretStructureManager.repairStructure(loc, structure)) {
-            // A non-replaceable foreign block is occupying part of the turret. Do not
-            // overwrite it and do not let an incomplete turret continue firing.
             return;
         }
 
@@ -354,7 +367,7 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
         return Math.max(1.5f, TurretStructureManager.getStructureHeight(structure) + 1.5f);
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onHitboxAttack(EntityDamageByEntityEvent e) {
         if (!(e.getEntity() instanceof Interaction interaction)) {
             return;
@@ -362,12 +375,23 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
         if (!interaction.getScoreboardTags().contains(getHitboxTag())) {
             return;
         }
+        if (!(e.getDamager() instanceof Player player)) {
+            e.setCancelled(true);
+            return;
+        }
+
+        Location loc = getBaseLocation(interaction);
+        if (loc == null || !ProtectionService.canDestroy(player, loc)) {
+            e.setCancelled(true);
+            ProtectionService.deny(player, "turret dismantling");
+            return;
+        }
 
         e.setCancelled(true);
-        handleDismantle(interaction, e.getDamager());
+        handleDismantle(interaction, player);
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onHitboxInteract(PlayerInteractEntityEvent e) {
         if (!(e.getRightClicked() instanceof Interaction interaction)) {
             return;
@@ -382,6 +406,11 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
         Location loc = getBaseLocation(interaction);
         if (loc == null) {
             interaction.remove();
+            return;
+        }
+
+        if (!ProtectionService.canModify(player, loc)) {
+            ProtectionService.deny(player, "turret interaction");
             return;
         }
 
@@ -406,7 +435,7 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
     }
 
     protected void handleDismantle(Interaction interaction, Entity damager) {
-        if (!(damager instanceof Player)) {
+        if (!(damager instanceof Player player)) {
             return;
         }
         if (interaction.hasMetadata("MA_DISMANTLED") || !interaction.isValid()) {
@@ -414,7 +443,11 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
         }
 
         Location loc = getBaseLocation(interaction);
-        if (loc == null || !TurretUtils.beginDismantle(loc)) {
+        if (loc == null || !ProtectionService.canDestroy(player, loc)) {
+            ProtectionService.deny(player, "turret dismantling");
+            return;
+        }
+        if (!TurretUtils.beginDismantle(loc)) {
             return;
         }
 
@@ -427,6 +460,31 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
         } else {
             interaction.remove();
         }
+    }
+
+    private boolean isStructureSafeForPlayer(Player player, Location baseLoc, String structureName) {
+        if (!ProtectionService.canModify(player, baseLoc)) {
+            return false;
+        }
+        if (!ProtectionService.isTownyPresent()) {
+            return true;
+        }
+
+        // Conservative footprint guard. Turret structures are narrow towers; this
+        // deliberately checks beyond their current footprint so a direct block write
+        // can never spill across a Towny plot/chunk boundary unnoticed.
+        int maxHeight = Math.max(1, TurretStructureManager.getMaxHeight(getStructurePrefix()) + 1);
+        for (int x = -3; x <= 3; x++) {
+            for (int z = -3; z <= 3; z++) {
+                for (int y = 0; y <= maxHeight; y++) {
+                    Location check = baseLoc.clone().add(x, y, z);
+                    if (!ProtectionService.canBuild(player, check)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private Location getBaseLocation(Interaction interaction) {
