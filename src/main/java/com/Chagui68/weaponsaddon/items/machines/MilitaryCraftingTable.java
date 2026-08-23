@@ -7,13 +7,10 @@ import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItemStack;
 import com.github.drakescraft_labs.slimefun4.api.recipes.RecipeType;
 import com.github.drakescraft_labs.slimefun4.api.SlimefunAddon;
 import com.github.drakescraft_labs.slimefun4.core.handlers.BlockUseHandler;
-import com.github.drakescraft_labs.slimefun4.core.handlers.BlockPlaceHandler;
 import com.github.drakescraft_labs.slimefun4.implementation.SlimefunItems;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 
 public class MilitaryCraftingTable extends SlimefunItem {
@@ -35,14 +32,6 @@ public class MilitaryCraftingTable extends SlimefunItem {
 
     @Override
     public void preRegister() {
-        addItemHandler(new BlockPlaceHandler(false) {
-            @Override
-            public void onPlayerPlace(BlockPlaceEvent e) {
-                Block b = e.getBlock();
-                BlockStorage.addBlockInfo(b, "id", "MA_MILITARY_CRAFTING_TABLE");
-            }
-        });
-
         addItemHandler((BlockUseHandler) e -> {
             e.cancel();
             Player p = e.getPlayer();
