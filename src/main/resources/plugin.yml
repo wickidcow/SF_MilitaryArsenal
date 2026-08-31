@@ -3,7 +3,7 @@ version: '${project.version}'
 main: com.Chagui68.weaponsaddon.LegacyWeaponsAddon
 api-version: '26.2'
 depend: [Slimefun]
-softdepend: [Towny]
+softdepend: [Towny, ItemsAdder]
 loadbefore: [Networks]
 author: Chagui68
 description: Military Arsenal for Slimefun Legacy on Paper/Purpur 26.2+
