@@ -2,6 +2,17 @@
 # Military Arsenal - General Configuration
 # ==========================================
 
+# Optional ItemsAdder weapon visuals.
+# Military Arsenal keeps its own Slimefun IDs, recipes, damage, cooldowns and upgrade data.
+# These mappings only borrow the ItemsAdder item model after ItemsAdder finishes loading its data.
+itemsadder:
+  visuals:
+    enabled: true
+    mappings:
+      MA_MACHINE_GUN: "iaweapons:ak47"
+      MA_ANTIMATTER_RIFLE: "iaweapons:ak47"
+      MA_MACHINE_GUN_AMMO: "iaweapons:projectile"
+
 # Bombardment security limits.
 # Targets must also be inside the world border and in an already-loaded chunk.
 bombardment:
