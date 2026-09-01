@@ -3,8 +3,10 @@ package com.Chagui68.weaponsaddon.handlers;
 import com.Chagui68.weaponsaddon.protection.ProtectionService;
 import com.Chagui68.weaponsaddon.utils.WeaponUtils;
 import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItem;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
@@ -19,6 +21,8 @@ import org.bukkit.util.Vector;
 
 public class AntimatterRifleHandler implements Listener {
 
+    private final Map<UUID, Long> cooldowns = new HashMap<>();
+
     @EventHandler(ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) {
@@ -26,10 +30,13 @@ public class AntimatterRifleHandler implements Listener {
         }
 
         ItemStack item = event.getItem();
-        if (item == null || item.getType() != Material.NETHERITE_SWORD) {
+        if (item == null || !item.hasItemMeta()) {
             return;
         }
 
+        // Identify the rifle by its Slimefun ID rather than its vanilla material. ItemsAdder visuals
+        // intentionally replace the base material, so a Material.NETHERITE_SWORD check makes a correctly
+        // textured rifle impossible to fire.
         SlimefunItem sfItem = SlimefunItem.getByItem(item);
         if (sfItem == null || !sfItem.getId().equals("MA_ANTIMATTER_RIFLE")) {
             return;
@@ -44,7 +51,10 @@ public class AntimatterRifleHandler implements Listener {
 
         event.setCancelled(true);
 
-        if (p.hasCooldown(Material.NETHERITE_SWORD)) {
+        UUID playerId = p.getUniqueId();
+        long now = System.currentTimeMillis();
+        long cooldownUntil = cooldowns.getOrDefault(playerId, 0L);
+        if (cooldownUntil > now) {
             p.sendMessage(ChatColor.RED + "⚠ Rifle cooling down...");
             return;
         }
@@ -93,7 +103,8 @@ public class AntimatterRifleHandler implements Listener {
                     String.format("%.1f", result.getHitPosition().distance(p.getEyeLocation().toVector()))
                     + " blocks");
 
-            p.setCooldown(Material.NETHERITE_SWORD, (int) WeaponUtils.calculateFireInterval(item, 320));
+            long cooldownTicks = WeaponUtils.calculateFireInterval(item, 320L);
+            cooldowns.put(playerId, now + Math.max(1L, cooldownTicks) * 50L);
         } else {
             p.sendMessage(ChatColor.RED + "✗ No target in range");
             p.getWorld().playSound(p.getLocation(), Sound.BLOCK_DISPENSER_FAIL, 1.0f, 1.0f);
