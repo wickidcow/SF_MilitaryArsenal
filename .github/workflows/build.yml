@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LEGACY_ARTIFACT_VERSION: "1.1.4"
-  OUTPUT_NAME: "SF_MilitaryArsenal1.1.4.jar"
+  LEGACY_ARTIFACT_VERSION: "1.1.5"
+  OUTPUT_NAME: "SF_MilitaryArsenal1.1.5.jar"
 
 jobs:
   build:
@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -Fq '<version>1.1.4</version>' pom.xml
+          grep -Fq '<version>1.1.5</version>' pom.xml
           grep -Fq '<paper.version>[26.2.build,)</paper.version>' pom.xml
           grep -Fq '<maven.compiler.release>21</maven.compiler.release>' pom.xml
           grep -Fq 'main: com.Chagui68.weaponsaddon.LegacyWeaponsAddon' src/main/resources/plugin.yml
