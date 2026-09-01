@@ -6,13 +6,13 @@
 
     <groupId>com.Chagui68</groupId>
     <artifactId>MilitaryArsenal</artifactId>
-    <version>1.1.5</version>
+    <version>1.1.6</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.release>21</maven.compiler.release>
-        <paper.version>[26.2.build,)</paper.version>
+        <paper.version>1.21.11-R0.1-SNAPSHOT</paper.version>
         <slimefun.groupId>com.github.SlimefunGuguProject</slimefun.groupId>
         <slimefun.artifactId>Slimefun4</slimefun.artifactId>
         <slimefun.version>2025.1</slimefun.version>
@@ -20,129 +20,44 @@
     </properties>
 
     <repositories>
-        <repository>
-            <id>central</id>
-            <url>https://repo.maven.apache.org/maven2</url>
-        </repository>
-        <repository>
-            <id>papermc</id>
-            <url>https://repo.papermc.io/repository/maven-public/</url>
-        </repository>
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
+        <repository><id>central</id><url>https://repo.maven.apache.org/maven2</url></repository>
+        <repository><id>papermc</id><url>https://repo.papermc.io/repository/maven-public/</url></repository>
+        <repository><id>jitpack.io</id><url>https://jitpack.io</url></repository>
     </repositories>
 
     <dependencies>
-        <dependency>
-            <groupId>io.papermc.paper</groupId>
-            <artifactId>paper-api</artifactId>
-            <version>${paper.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>${slimefun.groupId}</groupId>
-            <artifactId>${slimefun.artifactId}</artifactId>
-            <version>${slimefun.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.joml</groupId>
-            <artifactId>joml</artifactId>
-            <version>1.10.8</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-            <version>3.0.2</version>
-            <scope>provided</scope>
-        </dependency>
+        <dependency><groupId>io.papermc.paper</groupId><artifactId>paper-api</artifactId><version>${paper.version}</version><scope>provided</scope></dependency>
+        <dependency><groupId>${slimefun.groupId}</groupId><artifactId>${slimefun.artifactId}</artifactId><version>${slimefun.version}</version><scope>provided</scope></dependency>
+        <dependency><groupId>org.joml</groupId><artifactId>joml</artifactId><version>1.10.8</version><scope>provided</scope></dependency>
+        <dependency><groupId>com.google.code.findbugs</groupId><artifactId>jsr305</artifactId><version>3.0.2</version><scope>provided</scope></dependency>
     </dependencies>
 
     <build>
         <defaultGoal>clean package</defaultGoal>
         <finalName>SF_MilitaryArsenal_Legacy_v${project.version}</finalName>
         <sourceDirectory>${legacy.source.dir}</sourceDirectory>
-
         <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-                <excludes><exclude>structures/*.nbt</exclude></excludes>
-            </resource>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>false</filtering>
-                <includes><include>structures/*.nbt</include></includes>
-            </resource>
+            <resource><directory>src/main/resources</directory><filtering>true</filtering><excludes><exclude>structures/*.nbt</exclude></excludes></resource>
+            <resource><directory>src/main/resources</directory><filtering>false</filtering><includes><include>structures/*.nbt</include></includes></resource>
         </resources>
-
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <execution>
-                        <id>prepare-slimefun-legacy-sources</id>
-                        <phase>generate-sources</phase>
-                        <goals><goal>run</goal></goals>
-                        <configuration>
-                            <target>
-                                <delete dir="${legacy.source.dir}"/>
-                                <copy todir="${legacy.source.dir}">
-                                    <fileset dir="${project.basedir}/src/main/java" includes="**/*.java"/>
-                                </copy>
-
-                                <replaceregexp match="com\.github\.drakescraft_labs\.slimefun4" replace="io.github.thebusybiscuit.slimefun4" byline="true">
-                                    <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
-                                </replaceregexp>
-                                <replaceregexp match="io\.github\.thebusybiscuit\.slimefun4\.legacy\.Objects\.handlers\.BlockTicker" replace="me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker" byline="true">
-                                    <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
-                                </replaceregexp>
-                                <replaceregexp match="Attribute\.GENERIC_" replace="Attribute." byline="true">
-                                    <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
-                                </replaceregexp>
-                                <replaceregexp match="Material\.CHAIN" replace="Material.IRON_CHAIN" byline="true">
-                                    <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
-                                </replaceregexp>
-
-                                <replaceregexp match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;Toughness&quot;\s*,\s*([^,\r\n]+)\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HEAD\s*\)" replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;toughness&quot;), \1, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD)" byline="false">
-                                    <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
-                                </replaceregexp>
-                                <replaceregexp match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;([^&quot;]+)&quot;\s*,\s*([^,\r\n]+)\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HEAD\s*\)" replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;\1&quot;), \2, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD)" byline="false">
-                                    <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
-                                </replaceregexp>
-                                <replaceregexp match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;([^&quot;]+)&quot;\s*,\s*([^,\r\n]+)\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HAND\s*\)" replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;\1&quot;), \2, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND)" byline="false">
-                                    <fileset dir="${legacy.source.dir}" includes="**/*.java"/>
-                                </replaceregexp>
-                                <replaceregexp match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;military_speed&quot;\s*,\s*baseSpdModifier\s*\+\s*spdBonus\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HAND\s*\)" replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;military_speed&quot;), baseSpdModifier + spdBonus, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND)" byline="false">
-                                    <fileset dir="${legacy.source.dir}" includes="**/UpgradeTableHandler.java"/>
-                                </replaceregexp>
-                                <replaceregexp match="mod\.getName\(\)\.startsWith\(namePrefix\)" replace="mod.getKey().getKey().startsWith(namePrefix)" byline="true">
-                                    <fileset dir="${legacy.source.dir}" includes="**/UpgradeTableHandler.java"/>
-                                </replaceregexp>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
+                <groupId>org.apache.maven.plugins</groupId><artifactId>maven-antrun-plugin</artifactId><version>3.1.0</version>
+                <executions><execution><id>prepare-slimefun-legacy-sources</id><phase>generate-sources</phase><goals><goal>run</goal></goals><configuration><target>
+                    <delete dir="${legacy.source.dir}"/>
+                    <copy todir="${legacy.source.dir}"><fileset dir="${project.basedir}/src/main/java" includes="**/*.java"/></copy>
+                    <replaceregexp match="com\.github\.drakescraft_labs\.slimefun4" replace="io.github.thebusybiscuit.slimefun4" byline="true"><fileset dir="${legacy.source.dir}" includes="**/*.java"/></replaceregexp>
+                    <replaceregexp match="io\.github\.thebusybiscuit\.slimefun4\.legacy\.Objects\.handlers\.BlockTicker" replace="me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker" byline="true"><fileset dir="${legacy.source.dir}" includes="**/*.java"/></replaceregexp>
+                    <replaceregexp match="Attribute\.GENERIC_" replace="Attribute." byline="true"><fileset dir="${legacy.source.dir}" includes="**/*.java"/></replaceregexp>
+                    <replaceregexp match="Material\.CHAIN" replace="Material.IRON_CHAIN" byline="true"><fileset dir="${legacy.source.dir}" includes="**/*.java"/></replaceregexp>
+                    <replaceregexp match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;Toughness&quot;\s*,\s*([^,\r\n]+)\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HEAD\s*\)" replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;toughness&quot;), \1, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD)" byline="false"><fileset dir="${legacy.source.dir}" includes="**/*.java"/></replaceregexp>
+                    <replaceregexp match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;([^&quot;]+)&quot;\s*,\s*([^,\r\n]+)\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HEAD\s*\)" replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;\1&quot;), \2, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD)" byline="false"><fileset dir="${legacy.source.dir}" includes="**/*.java"/></replaceregexp>
+                    <replaceregexp match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;([^&quot;]+)&quot;\s*,\s*([^,\r\n]+)\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HAND\s*\)" replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;\1&quot;), \2, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND)" byline="false"><fileset dir="${legacy.source.dir}" includes="**/*.java"/></replaceregexp>
+                    <replaceregexp match="new AttributeModifier\(\s*UUID\.randomUUID\(\),\s*&quot;military_speed&quot;\s*,\s*baseSpdModifier\s*\+\s*spdBonus\s*,\s*AttributeModifier\.Operation\.ADD_NUMBER\s*,\s*EquipmentSlot\.HAND\s*\)" replace="new AttributeModifier(new NamespacedKey(WeaponsAddon.getInstance(), &quot;military_speed&quot;), baseSpdModifier + spdBonus, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND)" byline="false"><fileset dir="${legacy.source.dir}" includes="**/UpgradeTableHandler.java"/></replaceregexp>
+                    <replaceregexp match="mod\.getName\(\)\.startsWith\(namePrefix\)" replace="mod.getKey().getKey().startsWith(namePrefix)" byline="true"><fileset dir="${legacy.source.dir}" includes="**/UpgradeTableHandler.java"/></replaceregexp>
+                </target></configuration></execution></executions>
             </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.14.1</version>
-                <configuration>
-                    <release>${maven.compiler.release}</release>
-                    <encoding>UTF-8</encoding>
-                    <proc>none</proc>
-                    <fork>true</fork>
-                    <showWarnings>true</showWarnings>
-                    <failOnWarning>true</failOnWarning>
-                </configuration>
-            </plugin>
+            <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.14.1</version><configuration><release>${maven.compiler.release}</release><encoding>UTF-8</encoding><proc>none</proc><fork>true</fork><showWarnings>true</showWarnings><failOnWarning>true</failOnWarning></configuration></plugin>
         </plugins>
     </build>
 </project>
