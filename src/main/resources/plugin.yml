@@ -1,12 +1,12 @@
 name: WeaponsAddon
 version: '${project.version}'
 main: com.Chagui68.weaponsaddon.LegacyWeaponsAddon
-api-version: '26.2'
+api-version: '1.21.11'
 depend: [Slimefun]
 softdepend: [Towny, ItemsAdder]
 loadbefore: [Networks]
 author: Chagui68
-description: Military Arsenal for Slimefun Legacy on Paper/Purpur 26.2+
+description: Military Arsenal for Slimefun Legacy on Minecraft 1.21.11 through 26.2
 
 commands:
   weapons:
