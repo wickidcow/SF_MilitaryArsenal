@@ -15,16 +15,16 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LEGACY_ARTIFACT_VERSION: "1.1.6"
-  OUTPUT_NAME: "SF_MilitaryArsenal1.1.6.jar"
+  LEGACY_ARTIFACT_VERSION: "1.1.7"
+  OUTPUT_NAME: "SF_MilitaryArsenal1.1.7.jar"
 
 jobs:
   build:
-    name: Build universal 1.21.11-26.2 JAR
+    name: Build universal 1.21.11-26.3 JAR
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Set up Java 25
         uses: actions/setup-java@v5
         with:
@@ -35,9 +35,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -Fq '<version>1.1.6</version>' pom.xml
+          grep -Fq '<version>1.1.7</version>' pom.xml
           grep -Fq '<paper.version>1.21.11-R0.1-SNAPSHOT</paper.version>' pom.xml
           grep -Fq '<maven.compiler.release>21</maven.compiler.release>' pom.xml
+          grep -Fq '<finalName>SF_MilitaryArsenal${project.version}</finalName>' pom.xml
           grep -Fq "api-version: '1.21.11'" src/main/resources/plugin.yml
           grep -Fq 'main: com.Chagui68.weaponsaddon.LegacyWeaponsAddon' src/main/resources/plugin.yml
           grep -Fq 'depend: [Slimefun]' src/main/resources/plugin.yml
@@ -80,7 +81,9 @@ jobs:
       - name: Verify Paper 1.21.11 compile baseline
         run: mvn -B -e -Dmaven.test.skip=true clean package --file pom.xml
       - name: Verify Paper 26.2 compile compatibility
-        run: mvn -B -e -Dmaven.test.skip=true -Dpaper.version=26.2.build.111-stable clean package --file pom.xml
+        run: mvn -B -e -Dmaven.test.skip=true "-Dpaper.version=[26.2.build,26.3)" clean package --file pom.xml
+      - name: Verify Paper 26.3 alpha compile compatibility
+        run: mvn -B -e -Dmaven.test.skip=true -Dpaper.version=26.3-rc-3.build.1-alpha clean package --file pom.xml
       - name: Build release JAR from 1.21.11 baseline
         run: mvn -B -e -Dmaven.test.skip=true -Dpaper.version=1.21.11-R0.1-SNAPSHOT clean package --file pom.xml
       - name: Stage and audit versioned JAR
@@ -88,11 +91,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          mapfile -t jars < <(find target -maxdepth 1 -type f -name '*.jar' ! -name 'original-*' ! -name '*-sources.jar' ! -name '*-javadoc.jar')
-          test "${#jars[@]}" -eq 1
-          cp "${jars[0]}" "dist/${OUTPUT_NAME}"
-          JAR="dist/${OUTPUT_NAME}"
+          JAR="target/${OUTPUT_NAME}"
           test -s "$JAR"
+          cp "$JAR" "dist/${OUTPUT_NAME}"
+          JAR="dist/${OUTPUT_NAME}"
           unzip -p "$JAR" plugin.yml | grep -Fq "api-version: '1.21.11'"
           javap -verbose -classpath "$JAR" com.Chagui68.weaponsaddon.LegacyWeaponsAddon | grep -Fq 'major version: 65'
           jar tf "$JAR" | grep -Fq 'com/Chagui68/weaponsaddon/LegacyWeaponsAddon.class'
@@ -102,6 +104,7 @@ jobs:
       - name: Upload raw JAR artifact
         uses: actions/upload-artifact@v7
         with:
+          name: ${{ env.OUTPUT_NAME }}
           path: dist/${{ env.OUTPUT_NAME }}
           archive: false
           if-no-files-found: error
@@ -114,7 +117,7 @@ jobs:
           set -euo pipefail
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then TAG="$GITHUB_REF_NAME"; else TAG="v${LEGACY_ARTIFACT_VERSION}"; fi
           JAR="dist/${OUTPUT_NAME}"
-          NOTES="Compatibility release for Minecraft/Purpur 1.21.11 through Paper/Purpur 26.2. Keeps Java 21 bytecode, ItemsAdder integration, and the existing security/anti-dupe safeguards."
+          NOTES="MilitaryArsenal 1.1.7 adds Paper 26.3 alpha compatibility validation while retaining Java 21 universal bytecode, Paper 26.2 as the primary production target, ItemsAdder integration, and all existing security and anti-dupe safeguards. Maven now emits ${OUTPUT_NAME} directly."
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$JAR" --clobber
           else
