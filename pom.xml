@@ -13,8 +13,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.release>21</maven.compiler.release>
         <paper.version>1.21.11-R0.1-SNAPSHOT</paper.version>
-        <slimefun.groupId>com.github.slimefun</slimefun.groupId>
-        <slimefun.artifactId>Slimefun</slimefun.artifactId>
+        <slimefun.groupId>com.github.wickidcow</slimefun.groupId>
+        <slimefun.artifactId>Slimefun-Legacy</slimefun.artifactId>
         <slimefun.version>4.1.60</slimefun.version>
         <legacy.source.dir>${project.build.directory}/legacy-src</legacy.source.dir>
     </properties>
