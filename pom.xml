@@ -13,9 +13,9 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.release>21</maven.compiler.release>
         <paper.version>1.21.11-R0.1-SNAPSHOT</paper.version>
-        <slimefun.groupId>com.github.SlimefunGuguProject</slimefun.groupId>
-        <slimefun.artifactId>Slimefun4</slimefun.artifactId>
-        <slimefun.version>2025.1</slimefun.version>
+        <slimefun.groupId>com.github.slimefun</slimefun.groupId>
+        <slimefun.artifactId>Slimefun</slimefun.artifactId>
+        <slimefun.version>4.1.60</slimefun.version>
         <legacy.source.dir>${project.build.directory}/legacy-src</legacy.source.dir>
     </properties>
 
@@ -23,6 +23,7 @@
         <repository><id>central</id><url>https://repo.maven.apache.org/maven2</url></repository>
         <repository><id>papermc</id><url>https://repo.papermc.io/repository/maven-public/</url></repository>
         <repository><id>jitpack.io</id><url>https://jitpack.io</url></repository>
+        <repository><id>slimefun-legacy</id><url>https://maven.norain.city/releases</url></repository>
     </repositories>
 
     <dependencies>
