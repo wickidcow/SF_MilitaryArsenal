@@ -13,7 +13,7 @@ import com.github.drakescraft_labs.slimefun4.core.handlers.BlockPlaceHandler;
 import com.github.drakescraft_labs.slimefun4.core.networks.energy.EnergyNetComponentType;
 import com.github.drakescraft_labs.slimefun4.legacy.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
+import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -134,12 +134,12 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
                 }
 
                 e.getBlock().setType(Material.LIGHT);
-                BlockStorage.addBlockInfo(e.getBlock(), "id", getTurretId());
+                SlimefunStorageCompat.setData(e.getBlock(), "id", getTurretId());
                 TurretUpgradeManager.setLevel(loc, 1);
 
                 if (!TurretStructureManager.placeStructure(loc, structure)) {
                     TurretStructureManager.removeStructure(loc, structure);
-                    BlockStorage.clearBlockInfo(loc);
+                    SlimefunStorageCompat.clear(loc);
                     e.setCancelled(true);
                     e.getPlayer().sendMessage("§cThe turret structure could not be loaded.");
                     return;
@@ -206,7 +206,7 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
 
         int cooldown = readCooldown(loc);
         if (cooldown > 0) {
-            BlockStorage.addBlockInfo(loc, "cooldown", String.valueOf(cooldown - 1));
+            SlimefunStorageCompat.setData(loc, "cooldown", String.valueOf(cooldown - 1));
             LivingEntity target = findTarget(loc, muzzle);
             updateModelRotation(loc, target);
             return;
@@ -236,12 +236,12 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
 
         int shotCooldown = getCurrentShotCooldown(loc);
         if (shotCooldown > 0) {
-            BlockStorage.addBlockInfo(loc, "cooldown", String.valueOf(shotCooldown));
+            SlimefunStorageCompat.setData(loc, "cooldown", String.valueOf(shotCooldown));
         }
     }
 
     private int readCooldown(Location loc) {
-        String value = BlockStorage.getLocationInfo(loc, "cooldown");
+        String value = SlimefunStorageCompat.getData(loc, "cooldown");
         if (value == null) {
             return 0;
         }
@@ -249,7 +249,7 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
         try {
             return Math.max(0, Integer.parseInt(value));
         } catch (NumberFormatException ignored) {
-            BlockStorage.addBlockInfo(loc, "cooldown", "0");
+            SlimefunStorageCompat.setData(loc, "cooldown", "0");
             return 0;
         }
     }
@@ -415,7 +415,7 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
         }
 
         if (player.isSneaking()) {
-            String id = BlockStorage.getLocationInfo(loc, "id");
+            String id = SlimefunStorageCompat.getData(loc, "id");
             if (getTurretId().equals(id)) {
                 TurretUpgradeGUI.open(
                         player,
@@ -451,7 +451,7 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
             return;
         }
 
-        String id = BlockStorage.getLocationInfo(loc, "id");
+        String id = SlimefunStorageCompat.getData(loc, "id");
         if (getTurretId().equals(id)) {
             interaction.setMetadata("MA_DISMANTLED", new FixedMetadataValue(WeaponsAddon.getInstance(), true));
             dismantle(loc);
@@ -514,7 +514,7 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
         int level = TurretUpgradeManager.getCurrentLevel(loc);
         String structure = TurretStructureManager.getStructureName(getStructurePrefix(), level);
         TurretStructureManager.removeStructure(loc, structure);
-        BlockStorage.clearBlockInfo(loc);
+        SlimefunStorageCompat.clear(loc);
 
         String tag = getLocationTag(loc);
         double height = getHitboxHeightForLevel(level);
