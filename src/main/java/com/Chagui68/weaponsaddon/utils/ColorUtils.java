@@ -1,49 +1,92 @@
 package com.Chagui68.weaponsaddon.utils;
 
-import org.bukkit.ChatColor;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
-public class ColorUtils {
+public final class ColorUtils {
 
     private static final Pattern HEX_PATTERN = Pattern.compile("#([A-Fa-f0-9]{6})");
 
-    /**
-     * translates & and HEX color codes in a string.
-     * 
-     * @param message The message to colorize
-     * @return The colorized string
-     */
-    public static String translate(String message) {
-        if (message == null)
-            return null;
+    private static final LegacyComponentSerializer AMPERSAND = LegacyComponentSerializer.builder()
+            .character('&')
+            .hexColors()
+            .useUnusualXRepeatedCharacterHexFormat()
+            .build();
 
-        Matcher matcher = HEX_PATTERN.matcher(message);
-        StringBuilder sb = new StringBuilder();
+    private static final LegacyComponentSerializer SECTION = LegacyComponentSerializer.builder()
+            .character('§')
+            .hexColors()
+            .useUnusualXRepeatedCharacterHexFormat()
+            .build();
 
-        while (matcher.find()) {
-            String color = matcher.group(1);
-            StringBuilder replacement = new StringBuilder("§x");
-            for (char c : color.toCharArray()) {
-                replacement.append('§').append(c);
-            }
-            matcher.appendReplacement(sb, replacement.toString());
-        }
-        matcher.appendTail(sb);
-
-        return ChatColor.translateAlternateColorCodes('&', sb.toString());
+    private ColorUtils() {
     }
 
     /**
-     * Translates a list of strings.
+     * Translates legacy ampersand and bare #RRGGBB color codes into an Adventure component.
      */
-    public static java.util.List<String> translateList(java.util.List<String> list) {
-        if (list == null)
+    public static Component component(String message) {
+        if (message == null) {
+            return Component.empty();
+        }
+
+        return AMPERSAND.deserialize(normalizeHex(message));
+    }
+
+    /**
+     * Retains the historical section-code String output for APIs/config fields that still
+     * consume legacy strings, without using Bukkit's deprecated ChatColor API.
+     */
+    public static String translate(String message) {
+        if (message == null) {
             return null;
-        java.util.List<String> translated = new java.util.ArrayList<>();
-        for (String s : list) {
-            translated.add(translate(s));
+        }
+
+        return SECTION.serialize(component(message));
+    }
+
+    public static List<String> translateList(List<String> list) {
+        if (list == null) {
+            return null;
+        }
+
+        List<String> translated = new ArrayList<>(list.size());
+        for (String line : list) {
+            translated.add(translate(line));
         }
         return translated;
+    }
+
+    public static List<Component> componentList(List<String> list) {
+        if (list == null) {
+            return null;
+        }
+
+        List<Component> translated = new ArrayList<>(list.size());
+        for (String line : list) {
+            translated.add(component(line));
+        }
+        return translated;
+    }
+
+    private static String normalizeHex(String message) {
+        Matcher matcher = HEX_PATTERN.matcher(message);
+        StringBuffer result = new StringBuffer();
+
+        while (matcher.find()) {
+            String hex = matcher.group(1);
+            StringBuilder replacement = new StringBuilder("&x");
+            for (char c : hex.toCharArray()) {
+                replacement.append('&').append(c);
+            }
+            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement.toString()));
+        }
+
+        matcher.appendTail(result);
+        return result.toString();
     }
 }
