@@ -150,10 +150,10 @@ public final class ItemsAdderIntegration {
 
     private static void copyMilitaryMeta(ItemMeta source, ItemMeta target) {
         if (source.hasDisplayName()) {
-            target.setDisplayName(source.getDisplayName());
+            target.displayName(source.displayName());
         }
         if (source.hasLore()) {
-            target.setLore(source.getLore());
+            target.lore(source.lore());
         }
 
         target.setUnbreakable(source.isUnbreakable());
