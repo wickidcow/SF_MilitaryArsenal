@@ -38,6 +38,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.ItemStack;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
@@ -420,7 +421,10 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
                 TurretUpgradeGUI.open(
                         player,
                         getTurretId(),
-                        getTurretItem().getDisplayName(),
+                        getTurretItem().getItemMeta().displayName() == null
+                                ? getTurretId()
+                                : PlainTextComponentSerializer.plainText().serialize(
+                                        getTurretItem().getItemMeta().displayName()),
                         loc,
                         getBaseRange(),
                         getBaseDamage(),
