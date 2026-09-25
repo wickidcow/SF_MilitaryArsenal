@@ -1,8 +1,9 @@
 package com.Chagui68.weaponsaddon.items.machines;
 
+import com.Chagui68.weaponsaddon.utils.ColorUtils;
 import com.Chagui68.weaponsaddon.utils.MachineSessionManager;
+import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
 import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItem;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -17,15 +18,13 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import net.kyori.adventure.text.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.bukkit.Bukkit.createInventory;
-import static org.bukkit.ChatColor.DARK_GRAY;
-import static org.bukkit.ChatColor.GOLD;
-import static org.bukkit.ChatColor.RED;
 
 public class AmmunitionWorkshopHandler implements Listener {
 
@@ -33,6 +32,7 @@ public class AmmunitionWorkshopHandler implements Listener {
     private static final int[] gridSlots = { 10, 11, 12, 19, 20, 21, 28, 29, 30 };
     private static final int resultSlot = 23;
     private static final int craftButtonSlot = 25;
+    private static final Component TITLE = ColorUtils.component("&8Ammunition Workshop");
 
     public static void openGuiStatic(Player p, Location loc) {
         openGui(p, loc);
@@ -40,16 +40,16 @@ public class AmmunitionWorkshopHandler implements Listener {
 
     private static void openGui(Player p, Location loc) {
         if (!MachineSessionManager.tryAcquire(p, loc)) {
-            p.sendMessage(RED + "This machine is already in use. Close your current machine GUI and try again.");
+            p.sendMessage(ColorUtils.component("&cThis machine is already in use. Close your current machine GUI and try again."));
             return;
         }
 
         try {
-            Inventory inv = createInventory(null, 45, DARK_GRAY + "Ammunition Workshop");
+            Inventory inv = createInventory(null, 45, TITLE);
 
             ItemStack glass = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
             ItemMeta glassMeta = glass.getItemMeta();
-            glassMeta.setDisplayName(" ");
+            glassMeta.displayName(Component.text(" "));
             glass.setItemMeta(glassMeta);
 
             for (int i = 0; i < inv.getSize(); i++)
@@ -57,17 +57,17 @@ public class AmmunitionWorkshopHandler implements Listener {
 
             for (int i = 0; i < gridSlots.length; i++) {
                 inv.setItem(gridSlots[i], null);
-                String data = BlockStorage.getLocationInfo(loc, "slot_" + i);
+                String data = SlimefunStorageCompat.getData(loc, "slot_" + i);
                 if (data != null && !data.isEmpty())
                     inv.setItem(gridSlots[i], deserializeItemStack(data));
             }
 
-            String resData = BlockStorage.getLocationInfo(loc, "result_slot");
+            String resData = SlimefunStorageCompat.getData(loc, "result_slot");
             inv.setItem(resultSlot, (resData != null && !resData.isEmpty()) ? deserializeItemStack(resData) : null);
 
             ItemStack anvil = new ItemStack(Material.ANVIL);
             ItemMeta anvilMeta = anvil.getItemMeta();
-            anvilMeta.setDisplayName(GOLD + "Click to Craft");
+            anvilMeta.displayName(ColorUtils.component("&6Click to Craft"));
             anvil.setItemMeta(anvilMeta);
             inv.setItem(craftButtonSlot, anvil);
 
@@ -84,7 +84,7 @@ public class AmmunitionWorkshopHandler implements Listener {
     public void onInventoryClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player p))
             return;
-        if (!e.getView().getTitle().equals(DARK_GRAY + "Ammunition Workshop"))
+        if (!e.getView().title().equals(TITLE))
             return;
 
         if (e.isShiftClick()) {
@@ -120,7 +120,7 @@ public class AmmunitionWorkshopHandler implements Listener {
 
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent e) {
-        if (!e.getView().getTitle().equals(DARK_GRAY + "Ammunition Workshop"))
+        if (!e.getView().title().equals(TITLE))
             return;
 
         int topSize = e.getView().getTopInventory().getSize();
@@ -197,7 +197,7 @@ public class AmmunitionWorkshopHandler implements Listener {
     public void onInventoryClose(InventoryCloseEvent e) {
         if (!(e.getPlayer() instanceof Player))
             return;
-        if (!e.getView().getTitle().equals(DARK_GRAY + "Ammunition Workshop"))
+        if (!e.getView().title().equals(TITLE))
             return;
 
         Player p = (Player) e.getPlayer();
@@ -217,35 +217,35 @@ public class AmmunitionWorkshopHandler implements Listener {
         Block b = e.getBlock();
         Location loc = b.getLocation();
 
-        if (BlockStorage.check(loc, "MA_AMMUNITION_WORKSHOP")) {
+        if (SlimefunStorageCompat.is(loc, "MA_AMMUNITION_WORKSHOP")) {
             e.setDropItems(false);
 
             for (int i = 0; i < gridSlots.length; i++) {
                 String key = "slot_" + i;
-                String data = BlockStorage.getLocationInfo(loc, key);
+                String data = SlimefunStorageCompat.getData(loc, key);
                 if (data != null && !data.isEmpty()) {
                     ItemStack item = deserializeItemStack(data);
                     if (item != null)
                         loc.getWorld().dropItemNaturally(loc, item);
-                    BlockStorage.addBlockInfo(loc, key, "");
+                    SlimefunStorageCompat.setData(loc, key, "");
                 }
             }
 
-            String resData = BlockStorage.getLocationInfo(loc, "result_slot");
+            String resData = SlimefunStorageCompat.getData(loc, "result_slot");
             if (resData != null && !resData.isEmpty()) {
                 ItemStack item = deserializeItemStack(resData);
                 if (item != null)
                     loc.getWorld().dropItemNaturally(loc, item);
-                BlockStorage.addBlockInfo(loc, "result_slot", "");
+                SlimefunStorageCompat.setData(loc, "result_slot", "");
             }
         }
     }
 
     private void saveInventory(Inventory inv, Location loc) {
         for (int i = 0; i < gridSlots.length; i++) {
-            BlockStorage.addBlockInfo(loc, "slot_" + i, serializeItemStack(inv.getItem(gridSlots[i])));
+            SlimefunStorageCompat.setData(loc, "slot_" + i, serializeItemStack(inv.getItem(gridSlots[i])));
         }
-        BlockStorage.addBlockInfo(loc, "result_slot", serializeItemStack(inv.getItem(resultSlot)));
+        SlimefunStorageCompat.setData(loc, "result_slot", serializeItemStack(inv.getItem(resultSlot)));
     }
 
     private static String serializeItemStack(ItemStack item) {

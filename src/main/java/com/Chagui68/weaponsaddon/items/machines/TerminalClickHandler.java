@@ -3,8 +3,8 @@ package com.Chagui68.weaponsaddon.items.machines;
 import com.Chagui68.weaponsaddon.WeaponsAddon;
 import com.Chagui68.weaponsaddon.items.machines.energy.EnergyManager;
 import com.Chagui68.weaponsaddon.protection.ProtectionService;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
-import org.bukkit.ChatColor;
+import com.Chagui68.weaponsaddon.utils.ColorUtils;
+import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -17,7 +17,8 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
+import io.papermc.paper.event.player.AsyncChatEvent;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -43,7 +44,7 @@ public class TerminalClickHandler implements Listener {
         if (!(e.getWhoClicked() instanceof Player))
             return;
 
-        if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Bombardment Terminal"))
+        if (!e.getView().title().equals(BombardmentTerminal.GUI_TITLE))
             return;
 
         if (e.isShiftClick()) {
@@ -62,8 +63,8 @@ public class TerminalClickHandler implements Listener {
             e.setCancelled(true);
 
             Location terminalLoc = playerTerminalLocations.get(p.getUniqueId());
-            if (terminalLoc == null || !BlockStorage.check(terminalLoc, "MA_BOMBARDMENT_TERMINAL")) {
-                p.sendMessage(ChatColor.RED + "[Terminal] Error: terminal is no longer available.");
+            if (terminalLoc == null || !SlimefunStorageCompat.is(terminalLoc, "MA_BOMBARDMENT_TERMINAL")) {
+                p.sendMessage(ColorUtils.RED + "[Terminal] Error: terminal is no longer available.");
                 return;
             }
 
@@ -73,13 +74,13 @@ public class TerminalClickHandler implements Listener {
             }
 
             if (awaitingCoordinates.containsKey(p.getUniqueId())) {
-                p.sendMessage(ChatColor.RED + "[Terminal] You already have a paid bombardment awaiting coordinates.");
+                p.sendMessage(ColorUtils.RED + "[Terminal] You already have a paid bombardment awaiting coordinates.");
                 return;
             }
 
             long cooldownRemaining = getCooldownRemainingMillis(p.getUniqueId());
             if (cooldownRemaining > 0) {
-                p.sendMessage(ChatColor.RED + "[Terminal] Cooling down. Try again in "
+                p.sendMessage(ColorUtils.RED + "[Terminal] Cooling down. Try again in "
                         + Math.max(1, (cooldownRemaining + 999) / 1000) + "s.");
                 return;
             }
@@ -93,25 +94,25 @@ public class TerminalClickHandler implements Listener {
             int starCount = isPlainMaterial(starSlot, Material.NETHER_STAR) ? starSlot.getAmount() : 0;
 
             if (currentEnergy < BombardmentTerminal.getEnergyRequired()) {
-                p.sendMessage(ChatColor.RED + "✗ [Terminal] Insufficient energy!");
-                p.sendMessage(ChatColor.GRAY + "You need: "
+                p.sendMessage(ColorUtils.RED + "✗ [Terminal] Insufficient energy!");
+                p.sendMessage(ColorUtils.GRAY + "You need: "
                         + formatEnergy(BombardmentTerminal.getEnergyRequired() - currentEnergy) + " J more");
-                p.sendMessage(ChatColor.YELLOW + "Connect to Slimefun power grid");
+                p.sendMessage(ColorUtils.YELLOW + "Connect to Slimefun power grid");
                 return;
             }
 
             if (tntCount < 10 || starCount < 5) {
-                p.sendMessage(ChatColor.RED + "✗ [Terminal] Insufficient resources!");
-                p.sendMessage(ChatColor.GRAY + "You need:");
+                p.sendMessage(ColorUtils.RED + "✗ [Terminal] Insufficient resources!");
+                p.sendMessage(ColorUtils.GRAY + "You need:");
                 if (tntCount < 10)
-                    p.sendMessage(ChatColor.YELLOW + " • " + (10 - tntCount) + " more plain TNT");
+                    p.sendMessage(ColorUtils.YELLOW + " • " + (10 - tntCount) + " more plain TNT");
                 if (starCount < 5)
-                    p.sendMessage(ChatColor.YELLOW + " • " + (5 - starCount) + " more plain Nether Stars");
+                    p.sendMessage(ColorUtils.YELLOW + " • " + (5 - starCount) + " more plain Nether Stars");
                 return;
             }
 
             if (!EnergyManager.removeCharge(terminalLoc, BombardmentTerminal.getEnergyRequired())) {
-                p.sendMessage(ChatColor.RED + "✗ [Terminal] Energy changed before activation. Try again.");
+                p.sendMessage(ColorUtils.RED + "✗ [Terminal] Energy changed before activation. Try again.");
                 return;
             }
 
@@ -120,12 +121,12 @@ public class TerminalClickHandler implements Listener {
             awaitingCoordinates.put(p.getUniqueId(), terminalLoc.clone());
 
             p.closeInventory();
-            p.sendMessage(ChatColor.GREEN + "✓ [Terminal] Resources consumed:");
-            p.sendMessage(ChatColor.GRAY + " • 10 TNT");
-            p.sendMessage(ChatColor.GRAY + " • 5 Nether Stars");
-            p.sendMessage(ChatColor.AQUA + " • 2,000,000 J energy");
-            p.sendMessage(ChatColor.YELLOW + "→ [Terminal] Enter coordinates: X Y Z");
-            p.sendMessage(ChatColor.GRAY + "Target must be in the terminal's world, within range, loaded, and allowed by land protection.");
+            p.sendMessage(ColorUtils.GREEN + "✓ [Terminal] Resources consumed:");
+            p.sendMessage(ColorUtils.GRAY + " • 10 TNT");
+            p.sendMessage(ColorUtils.GRAY + " • 5 Nether Stars");
+            p.sendMessage(ColorUtils.AQUA + " • 2,000,000 J energy");
+            p.sendMessage(ColorUtils.YELLOW + "→ [Terminal] Enter coordinates: X Y Z");
+            p.sendMessage(ColorUtils.GRAY + "Target must be in the terminal's world, within range, loaded, and allowed by land protection.");
             return;
         }
 
@@ -136,7 +137,7 @@ public class TerminalClickHandler implements Listener {
 
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent e) {
-        if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Bombardment Terminal"))
+        if (!e.getView().title().equals(BombardmentTerminal.GUI_TITLE))
             return;
 
         int topSize = e.getView().getTopInventory().getSize();
@@ -150,7 +151,7 @@ public class TerminalClickHandler implements Listener {
         if (!(e.getPlayer() instanceof Player))
             return;
 
-        if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Bombardment Terminal"))
+        if (!e.getView().title().equals(BombardmentTerminal.GUI_TITLE))
             return;
 
         Player p = (Player) e.getPlayer();
@@ -169,14 +170,14 @@ public class TerminalClickHandler implements Listener {
         Block b = e.getBlock();
         Location loc = b.getLocation();
 
-        if (BlockStorage.check(loc, "MA_BOMBARDMENT_TERMINAL")) {
+        if (SlimefunStorageCompat.is(loc, "MA_BOMBARDMENT_TERMINAL")) {
             awaitingCoordinates.entrySet().removeIf(entry -> sameBlock(entry.getValue(), loc));
             BombardmentTerminal.removeSatelliteModel(loc);
         }
     }
 
     @EventHandler
-    public void onChat(AsyncPlayerChatEvent e) {
+    public void onChat(AsyncChatEvent e) {
         Player p = e.getPlayer();
         UUID playerId = p.getUniqueId();
         Location terminalLoc = awaitingCoordinates.get(playerId);
@@ -184,11 +185,11 @@ public class TerminalClickHandler implements Listener {
             return;
 
         e.setCancelled(true);
-        String[] parts = e.getMessage().trim().split("\\s+");
+        String[] parts = PlainTextComponentSerializer.plainText().serialize(e.message()).trim().split("\\s+");
 
         if (parts.length != 3) {
-            p.sendMessage(ChatColor.RED + "[Terminal] Invalid format. Use: X Y Z");
-            p.sendMessage(ChatColor.GRAY + "Example: 100 64 -200");
+            p.sendMessage(ColorUtils.RED + "[Terminal] Invalid format. Use: X Y Z");
+            p.sendMessage(ColorUtils.GRAY + "Example: 100 64 -200");
             return;
         }
 
@@ -200,8 +201,8 @@ public class TerminalClickHandler implements Listener {
             y = Integer.parseInt(parts[1]);
             z = Integer.parseInt(parts[2]);
         } catch (NumberFormatException ex) {
-            p.sendMessage(ChatColor.RED + "[Terminal] Invalid coordinates. Use whole numbers.");
-            p.sendMessage(ChatColor.GRAY + "Example: 100 64 -200");
+            p.sendMessage(ColorUtils.RED + "[Terminal] Invalid coordinates. Use whole numbers.");
+            p.sendMessage(ColorUtils.GRAY + "Example: 100 64 -200");
             return;
         }
 
@@ -217,8 +218,8 @@ public class TerminalClickHandler implements Listener {
             return;
         }
 
-        if (!BlockStorage.check(terminalLoc, "MA_BOMBARDMENT_TERMINAL")) {
-            p.sendMessage(ChatColor.RED + "[Terminal] The terminal was removed before targeting completed.");
+        if (!SlimefunStorageCompat.is(terminalLoc, "MA_BOMBARDMENT_TERMINAL")) {
+            p.sendMessage(ColorUtils.RED + "[Terminal] The terminal was removed before targeting completed.");
             return;
         }
 
@@ -229,12 +230,12 @@ public class TerminalClickHandler implements Listener {
 
         World world = terminalLoc.getWorld();
         if (world == null) {
-            p.sendMessage(ChatColor.RED + "[Terminal] Terminal world is unavailable.");
+            p.sendMessage(ColorUtils.RED + "[Terminal] Terminal world is unavailable.");
             return;
         }
 
         if (y < world.getMinHeight() || y >= world.getMaxHeight()) {
-            p.sendMessage(ChatColor.RED + "[Terminal] Invalid Y coordinate for this world ("
+            p.sendMessage(ColorUtils.RED + "[Terminal] Invalid Y coordinate for this world ("
                     + world.getMinHeight() + " to " + (world.getMaxHeight() - 1) + ").");
             awaitingCoordinates.put(p.getUniqueId(), terminalLoc);
             return;
@@ -246,14 +247,14 @@ public class TerminalClickHandler implements Listener {
         long distanceSquared = dx * dx + dz * dz;
         long maxRangeSquared = (long) maxRange * maxRange;
         if (distanceSquared > maxRangeSquared) {
-            p.sendMessage(ChatColor.RED + "[Terminal] Target is too far away. Maximum horizontal range: " + maxRange + " blocks.");
+            p.sendMessage(ColorUtils.RED + "[Terminal] Target is too far away. Maximum horizontal range: " + maxRange + " blocks.");
             awaitingCoordinates.put(p.getUniqueId(), terminalLoc);
             return;
         }
 
         Location target = new Location(world, x + 0.5, y, z + 0.5);
         if (!world.getWorldBorder().isInside(target)) {
-            p.sendMessage(ChatColor.RED + "[Terminal] Target is outside the world border.");
+            p.sendMessage(ColorUtils.RED + "[Terminal] Target is outside the world border.");
             awaitingCoordinates.put(p.getUniqueId(), terminalLoc);
             return;
         }
@@ -261,7 +262,7 @@ public class TerminalClickHandler implements Listener {
         int chunkX = x >> 4;
         int chunkZ = z >> 4;
         if (!world.isChunkLoaded(chunkX, chunkZ)) {
-            p.sendMessage(ChatColor.RED + "[Terminal] Target chunk is not loaded. Airstrikes cannot force-load remote chunks.");
+            p.sendMessage(ColorUtils.RED + "[Terminal] Target chunk is not loaded. Airstrikes cannot force-load remote chunks.");
             awaitingCoordinates.put(p.getUniqueId(), terminalLoc);
             return;
         }
@@ -274,16 +275,16 @@ public class TerminalClickHandler implements Listener {
 
         long cooldownRemaining = getCooldownRemainingMillis(p.getUniqueId());
         if (cooldownRemaining > 0) {
-            p.sendMessage(ChatColor.RED + "[Terminal] Cooling down. Try again in "
+            p.sendMessage(ColorUtils.RED + "[Terminal] Cooling down. Try again in "
                     + Math.max(1, (cooldownRemaining + 999) / 1000) + "s.");
             awaitingCoordinates.put(p.getUniqueId(), terminalLoc);
             return;
         }
 
         lastBombardments.put(p.getUniqueId(), System.currentTimeMillis());
-        p.sendMessage(ChatColor.GREEN + "✓ [Terminal] Coordinates confirmed: " + x + " " + y + " " + z);
-        p.sendMessage(ChatColor.DARK_RED + "⚠ [Terminal] BOMBARDMENT INITIATED");
-        p.sendMessage(ChatColor.GRAY + "Impact in 3 seconds...");
+        p.sendMessage(ColorUtils.GREEN + "✓ [Terminal] Coordinates confirmed: " + x + " " + y + " " + z);
+        p.sendMessage(ColorUtils.DARK_RED + "⚠ [Terminal] BOMBARDMENT INITIATED");
+        p.sendMessage(ColorUtils.GRAY + "Impact in 3 seconds...");
         AirstrikeExecutor.executeBombardment(target, p);
     }
 

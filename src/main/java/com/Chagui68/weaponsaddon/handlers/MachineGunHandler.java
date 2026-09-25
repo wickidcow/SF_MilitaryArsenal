@@ -4,7 +4,7 @@ import com.Chagui68.weaponsaddon.WeaponsAddon;
 import com.Chagui68.weaponsaddon.protection.ProtectionService;
 import com.Chagui68.weaponsaddon.utils.WeaponUtils;
 import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItem;
-import org.bukkit.ChatColor;
+import com.Chagui68.weaponsaddon.utils.ColorUtils;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -59,14 +59,14 @@ public class MachineGunHandler implements Listener {
         }
 
         if (!hasAmmo(player)) {
-            player.sendMessage(ChatColor.RED + "✕ Out of ammo! Craft Machine Gun Bullets");
+            player.sendMessage(ColorUtils.component("&c✕ Out of ammo! Craft Machine Gun Bullets"));
             player.playSound(player.getLocation(), Sound.BLOCK_DISPENSER_FAIL, 1.0f, 1.0f);
             return;
         }
 
         consumeAmmo(player);
         cooldowns.put(playerId, currentTime);
-        player.sendMessage(ChatColor.GREEN + "✓ Magazine loaded (" + BURST_SIZE + " rounds)");
+        player.sendMessage(ColorUtils.component("&a✓ Magazine loaded (" + BURST_SIZE + " rounds)"));
         fireBurst(player, item);
     }
 
@@ -77,13 +77,13 @@ public class MachineGunHandler implements Listener {
             @Override
             public void run() {
                 if (shotsFired >= BURST_SIZE) {
-                    player.sendMessage(ChatColor.GREEN + "✓ Burst complete - Magazine empty");
+                    player.sendMessage(ColorUtils.component("&a✓ Burst complete - Magazine empty"));
                     cancel();
                     return;
                 }
 
                 shotsFired++;
-                player.sendMessage(ChatColor.YELLOW + "🔫 Firing burst... [" + shotsFired + "/" + BURST_SIZE + "]");
+                player.sendMessage(ColorUtils.component("&e🔫 Firing burst... [" + shotsFired + "/" + BURST_SIZE + "]"));
 
                 Location eyeLoc = player.getEyeLocation();
                 Vector direction = eyeLoc.getDirection();
@@ -114,7 +114,7 @@ public class MachineGunHandler implements Listener {
                             target.getWorld().spawnParticle(Particle.ENCHANTED_HIT,
                                     target.getLocation().add(0, 1, 0), 20, 0.3, 0.5, 0.3);
                             target.getWorld().playSound(target.getLocation(), Sound.ENTITY_ARROW_HIT, 1.0f, 1.0f);
-                            player.sendMessage(ChatColor.RED + "✕ HIT! -" + String.format("%.1f", finalDamage) + " HP");
+                            player.sendMessage(ColorUtils.component("&c✕ HIT! -" + String.format("%.1f", finalDamage) + " HP"));
                             return;
                         }
                     }

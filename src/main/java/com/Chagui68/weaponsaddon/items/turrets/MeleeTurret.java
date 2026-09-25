@@ -17,7 +17,7 @@ import com.github.drakescraft_labs.slimefun4.core.handlers.BlockPlaceHandler;
 import com.github.drakescraft_labs.slimefun4.core.networks.energy.EnergyNetComponentType;
 import com.github.drakescraft_labs.slimefun4.legacy.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
+import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
 import org.bukkit.Bukkit;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
@@ -107,7 +107,7 @@ public class MeleeTurret extends CustomRecipeItem implements EnergyNetComponent,
             @Override
             public void onPlayerPlace(@Nonnull BlockPlaceEvent e) {
                 e.getBlock().setType(Material.LIGHT);
-                BlockStorage.addBlockInfo(e.getBlock(), "id", "MA_MELEE_TURRET");
+                SlimefunStorageCompat.setData(e.getBlock(), "id", "MA_MELEE_TURRET");
                 spawnGuardianModel(e.getBlock().getLocation());
             }
         });
@@ -157,7 +157,7 @@ public class MeleeTurret extends CustomRecipeItem implements EnergyNetComponent,
 
         int cooldown = readCooldown(loc);
         if (cooldown > 0) {
-            BlockStorage.addBlockInfo(loc, "cooldown", String.valueOf(cooldown - 1));
+            SlimefunStorageCompat.setData(loc, "cooldown", String.valueOf(cooldown - 1));
             return;
         }
 
@@ -171,18 +171,18 @@ public class MeleeTurret extends CustomRecipeItem implements EnergyNetComponent,
         }
 
         EnergyManager.removeCharge(loc, ENERGY_PER_ATTACK);
-        BlockStorage.addBlockInfo(loc, "cooldown", String.valueOf(ATTACK_COOLDOWN));
+        SlimefunStorageCompat.setData(loc, "cooldown", String.valueOf(ATTACK_COOLDOWN));
     }
 
     private int readCooldown(Location loc) {
-        String value = BlockStorage.getLocationInfo(loc, "cooldown");
+        String value = SlimefunStorageCompat.getData(loc, "cooldown");
         if (value == null) {
             return 0;
         }
         try {
             return Math.max(0, Integer.parseInt(value));
         } catch (NumberFormatException ignored) {
-            BlockStorage.addBlockInfo(loc, "cooldown", "0");
+            SlimefunStorageCompat.setData(loc, "cooldown", "0");
             return 0;
         }
     }
@@ -370,7 +370,7 @@ public class MeleeTurret extends CustomRecipeItem implements EnergyNetComponent,
             return;
         }
 
-        String id = BlockStorage.getLocationInfo(loc, "id");
+        String id = SlimefunStorageCompat.getData(loc, "id");
         if (!"MA_MELEE_TURRET".equals(id)) {
             removeGuardianModel(loc);
             interaction.remove();
@@ -379,7 +379,7 @@ public class MeleeTurret extends CustomRecipeItem implements EnergyNetComponent,
 
         interaction.setMetadata("MA_DISMANTLED", new FixedMetadataValue(WeaponsAddon.getInstance(), true));
         ACTIVE_ATTACKS.remove(getModelTag(loc));
-        BlockStorage.clearBlockInfo(loc);
+        SlimefunStorageCompat.clear(loc);
         loc.getBlock().setType(Material.AIR, false);
         interaction.getWorld().playSound(interaction.getLocation(), Sound.BLOCK_ANVIL_BREAK, 1f, 1f);
         interaction.getWorld().dropItemNaturally(loc, MELEE_TURRET.clone());

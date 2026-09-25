@@ -3,10 +3,10 @@ package com.Chagui68.weaponsaddon.handlers;
 import com.Chagui68.weaponsaddon.WeaponsAddon;
 import com.Chagui68.weaponsaddon.items.components.MilitaryComponents;
 import com.Chagui68.weaponsaddon.items.machines.energy.EnergyManager;
+import com.Chagui68.weaponsaddon.utils.ColorUtils;
 import com.Chagui68.weaponsaddon.utils.WeaponUtils;
 import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItem;
 import com.github.drakescraft_labs.slimefun4.libraries.dough.items.CustomItemStack;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -18,12 +18,14 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,8 +46,8 @@ public class UpgradeTableHandler implements Listener {
     private static final double SPEED_PER_LEVEL = 0.2; // +0.15 speed per level
     private static final Map<UUID, Location> openTables = new HashMap<>();
 
-    // Hidden marker to identify our lore lines
-    private static final String LORE_MARKER = ChatColor.BLACK + "" + ChatColor.DARK_GRAY + "" + ChatColor.RESET;
+    private static final Component TITLE = ColorUtils.component("&8Weapon Upgrade Table");
+    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
 
     // Valid weapon/tool materials
     private static final Set<Material> VALID_UPGRADE_ITEMS = EnumSet.of(
@@ -130,7 +132,7 @@ public class UpgradeTableHandler implements Listener {
     private static final int OUTPUT_SLOT = 22;
 
     public static void openUpgradeGui(Player p, Location loc, int energy) {
-        Inventory inv = createInventory(null, 27, ChatColor.DARK_GRAY + "Weapon Upgrade Table");
+        Inventory inv = createInventory(null, 27, TITLE);
 
         ItemStack darkBg = new CustomItemStack(Material.BLACK_STAINED_GLASS_PANE, " ");
         ItemStack lightBg = new CustomItemStack(Material.GRAY_STAINED_GLASS_PANE, " ");
@@ -190,7 +192,7 @@ public class UpgradeTableHandler implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
-        if (!e.getView().getTitle().equals(ChatColor.DARK_GRAY + "Weapon Upgrade Table"))
+        if (!e.getView().title().equals(TITLE))
             return;
 
         Player p = (Player) e.getWhoClicked();
@@ -210,7 +212,7 @@ public class UpgradeTableHandler implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent e) {
-        if (!e.getView().getTitle().equals(ChatColor.DARK_GRAY + "Weapon Upgrade Table"))
+        if (!e.getView().title().equals(TITLE))
             return;
 
         Player p = (Player) e.getPlayer();
@@ -238,25 +240,25 @@ public class UpgradeTableHandler implements Listener {
         Location loc = openTables.get(p.getUniqueId());
 
         if (outputItem != null && outputItem.getType() != Material.AIR) {
-            p.sendMessage(ChatColor.RED + "✕ Output slot not empty!");
+            p.sendMessage(ColorUtils.component("&c✕ Output slot not empty!"));
             p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
             return;
         }
 
         if (weaponItem == null || weaponItem.getType() == Material.AIR) {
-            p.sendMessage(ChatColor.RED + "✕ Place a weapon in the left slot!");
+            p.sendMessage(ColorUtils.component("&c✕ Place a weapon in the left slot!"));
             p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
             return;
         }
 
         if (!isValidUpgradeItem(weaponItem)) {
-            p.sendMessage(ChatColor.RED + "✕ Only weapons and tools can be upgraded!");
+            p.sendMessage(ColorUtils.component("&c✕ Only weapons and tools can be upgraded!"));
             p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
             return;
         }
 
         if (moduleItem == null || moduleItem.getType() == Material.AIR) {
-            p.sendMessage(ChatColor.RED + "✕ Place a module in the right slot!");
+            p.sendMessage(ColorUtils.component("&c✕ Place a module in the right slot!"));
             p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
             return;
         }
@@ -266,7 +268,7 @@ public class UpgradeTableHandler implements Listener {
 
         int energy = EnergyManager.getCharge(loc);
         if (energy < UPGRADE_COST) {
-            p.sendMessage(ChatColor.RED + "✕ Not enough energy! Need 50,000 J");
+            p.sendMessage(ColorUtils.component("&c✕ Not enough energy! Need 50,000 J"));
             p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_LAND, 0.5f, 0.5f);
             return;
         }
@@ -278,7 +280,7 @@ public class UpgradeTableHandler implements Listener {
         if (MilitaryComponents.DAMAGE_MODULE_I.isSimilar(moduleItem)) {
             int currentLevel = getUpgradeLevel(upgradedWeapon, "damage");
             if (currentLevel >= MAX_UPGRADE_LEVEL) {
-                p.sendMessage(ChatColor.RED + "✕ Max damage level reached! (5/5)");
+                p.sendMessage(ColorUtils.component("&c✕ Max damage level reached! (5/5)"));
                 p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                 return;
             }
@@ -287,14 +289,14 @@ public class UpgradeTableHandler implements Listener {
         } else if (MilitaryComponents.SPEED_MODULE_I.isSimilar(moduleItem)) {
             int currentLevel = getUpgradeLevel(upgradedWeapon, "speed");
             if (currentLevel >= MAX_UPGRADE_LEVEL) {
-                p.sendMessage(ChatColor.RED + "✕ Max speed level reached! (5/5)");
+                p.sendMessage(ColorUtils.component("&c✕ Max speed level reached! (5/5)"));
                 p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                 return;
             }
             success = applySpeedUpgrade(upgradedWeapon, currentLevel + 1);
             upgradeType = "SPEED Lv." + (currentLevel + 1);
         } else {
-            p.sendMessage(ChatColor.RED + "✕ Invalid upgrade module!");
+            p.sendMessage(ColorUtils.component("&c✕ Invalid upgrade module!"));
             p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
             return;
         }
@@ -307,7 +309,7 @@ public class UpgradeTableHandler implements Listener {
 
             p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_USE, 1.0f, 1.2f);
             p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1.5f);
-            p.sendMessage(ChatColor.GREEN + "✓ Upgrade successful! " + ChatColor.YELLOW + upgradeType);
+            p.sendMessage(ColorUtils.component("&a✓ Upgrade successful! &e" + upgradeType));
 
             refreshEnergyDisplay(inv, loc);
         }
@@ -378,8 +380,10 @@ public class UpgradeTableHandler implements Listener {
 
         if (totalDmgBonus > 0) {
             meta.addAttributeModifier(Attribute.GENERIC_ATTACK_DAMAGE, new AttributeModifier(
-                    UUID.randomUUID(), "military_damage",
-                    totalDmgBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND));
+                    new NamespacedKey(WeaponsAddon.getInstance(), "military_damage"),
+                    totalDmgBonus,
+                    AttributeModifier.Operation.ADD_NUMBER,
+                    EquipmentSlotGroup.MAINHAND));
         }
 
         // 5. Apply Speed (CRITICAL: Always apply a base modifier if we hide attributes,
@@ -390,8 +394,10 @@ public class UpgradeTableHandler implements Listener {
         // We ALWAYS apply a speed modifier if ANY upgrade exists, to prevent reset to
         // 4.0
         meta.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, new AttributeModifier(
-                UUID.randomUUID(), "military_speed",
-                baseSpdModifier + spdBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND));
+                new NamespacedKey(WeaponsAddon.getInstance(), "military_speed"),
+                baseSpdModifier + spdBonus,
+                AttributeModifier.Operation.ADD_NUMBER,
+                EquipmentSlotGroup.MAINHAND));
     }
 
     private double getBaseSpeedModifier(Material type) {
@@ -438,7 +444,7 @@ public class UpgradeTableHandler implements Listener {
             return;
 
         for (AttributeModifier mod : new ArrayList<>(mods)) {
-            if (mod.getName().startsWith(namePrefix)) {
+            if (mod.getKey().getKey().startsWith(namePrefix)) {
                 meta.removeAttributeModifier(attr, mod);
             }
         }
@@ -446,26 +452,25 @@ public class UpgradeTableHandler implements Listener {
 
     public static void updateWeaponLore(ItemStack item) {
         ItemMeta meta = item.getItemMeta();
-        if (meta == null)
+        if (meta == null) {
             return;
+        }
 
-        List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
+        List<Component> lore = meta.hasLore() && meta.lore() != null
+                ? new ArrayList<>(meta.lore())
+                : new ArrayList<>();
 
-        // 1. Precise Cleanup: Remove our lines, redundant stats, AND blank lines.
-        // We use color-agnostic checks to catch lines from other plugins.
         lore.removeIf(line -> {
-            String stripped = ChatColor.stripColor(line).toLowerCase().trim();
-            return stripped.isEmpty() ||
-                    line.startsWith(LORE_MARKER) ||
-                    stripped.contains("damage:") ||
-                    stripped.contains("speed:") ||
-                    stripped.contains("attack speed") ||
-                    stripped.contains("weapon damage") ||
-                    stripped.contains("velocidad de ataque") ||
-                    stripped.contains("upgrade:");
+            String stripped = PLAIN.serialize(line).toLowerCase().trim();
+            return stripped.isEmpty()
+                    || stripped.contains("damage:")
+                    || stripped.contains("speed:")
+                    || stripped.contains("attack speed")
+                    || stripped.contains("weapon damage")
+                    || stripped.contains("velocidad de ataque")
+                    || stripped.contains("upgrade:");
         });
 
-        // 2. Damage and Speed calculation (Recalculate Totals)
         double totalDamage = calculateTotalDamage(item);
         double totalSpeed = calculateTotalSpeed(item);
 
@@ -474,15 +479,11 @@ public class UpgradeTableHandler implements Listener {
         double dmgBonusAtCurrentLevel = dmgLevel * DAMAGE_PER_LEVEL;
         double spdBonusAtCurrentLevel = spdLevel * SPEED_PER_LEVEL;
 
-        // 4. Build and Add New Lore (at the top after any special icons/names)
         int insertIndex = 0;
-
-        // Find a good place to insert (after existing non-stat lore if possible)
         for (int i = 0; i < lore.size(); i++) {
-            String line = ChatColor.stripColor(lore.get(i)).trim();
+            String line = PLAIN.serialize(lore.get(i)).trim();
             if (!line.isEmpty()) {
                 insertIndex = i + 1;
-                // If we hit technical tags, stop there
                 if (line.startsWith("minecraft:") || line.equals("Unbreakable")) {
                     insertIndex = i;
                     break;
@@ -490,46 +491,39 @@ public class UpgradeTableHandler implements Listener {
             }
         }
 
-        List<String> newStats = new ArrayList<>();
-
-        // Add spacer before our stats if there is lore above us
+        List<Component> newStats = new ArrayList<>();
         if (insertIndex > 0) {
-            newStats.add(LORE_MARKER);
+            newStats.add(Component.empty());
         }
 
         if (dmgLevel > 0) {
-            newStats.add(LORE_MARKER + ChatColor.translateAlternateColorCodes('&',
+            newStats.add(ColorUtils.component(
                     "&c⚔ DAMAGE: &f" + String.format("%.1f", totalDamage)
                             + (dmgBonusAtCurrentLevel > 0
                                     ? " &7(+" + String.format("%.1f", dmgBonusAtCurrentLevel) + ")"
                                     : "")));
-            newStats.add(LORE_MARKER + ChatColor.translateAlternateColorCodes('&',
-                    "&7Upgrade: " + createProgressBar(dmgLevel, MAX_UPGRADE_LEVEL) + " &f" + dmgLevel + "/"
-                            + MAX_UPGRADE_LEVEL));
+            newStats.add(ColorUtils.component(
+                    "&7Upgrade: " + createProgressBar(dmgLevel, MAX_UPGRADE_LEVEL)
+                            + " &f" + dmgLevel + "/" + MAX_UPGRADE_LEVEL));
         }
 
         if (spdLevel > 0) {
-            newStats.add(LORE_MARKER + ChatColor.translateAlternateColorCodes('&',
+            newStats.add(ColorUtils.component(
                     "&b⚡ SPEED: &f" + String.format("%.2f", totalSpeed)
                             + (spdBonusAtCurrentLevel > 0
                                     ? " &7(+" + String.format("%.2f", spdBonusAtCurrentLevel) + ")"
                                     : "")));
-            newStats.add(LORE_MARKER + ChatColor.translateAlternateColorCodes('&',
-                    "&7Upgrade: " + createProgressBar(spdLevel, MAX_UPGRADE_LEVEL) + " &f" + spdLevel + "/"
-                            + MAX_UPGRADE_LEVEL));
+            newStats.add(ColorUtils.component(
+                    "&7Upgrade: " + createProgressBar(spdLevel, MAX_UPGRADE_LEVEL)
+                            + " &f" + spdLevel + "/" + MAX_UPGRADE_LEVEL));
         }
 
-        // Add spacer after our stats if there is lore below us (like technical tags)
-        if (insertIndex < lore.size()) {
-            // Ensure we don't double-spacer if the line above is already a LORE_MARKER
-            if (newStats.get(newStats.size() - 1) != LORE_MARKER) {
-                newStats.add(LORE_MARKER);
-            }
+        if (insertIndex < lore.size() && !newStats.isEmpty()) {
+            newStats.add(Component.empty());
         }
 
         lore.addAll(insertIndex, newStats);
-
-        meta.setLore(lore);
+        meta.lore(lore);
         item.setItemMeta(meta);
     }
 

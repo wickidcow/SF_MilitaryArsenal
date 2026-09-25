@@ -1,12 +1,12 @@
 package com.Chagui68.weaponsaddon.items.machines.energy;
 
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
+import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
 import org.bukkit.Location;
 
 public class EnergyManager {
 
     public static int getCharge(Location loc) {
-        String charge = BlockStorage.getLocationInfo(loc, "energy-charge");
+        String charge = SlimefunStorageCompat.getData(loc, "energy-charge");
         if (charge != null) {
             return Integer.parseInt(charge);
         }
@@ -14,7 +14,7 @@ public class EnergyManager {
     }
 
     public static void setCharge(Location loc, int charge) {
-        BlockStorage.addBlockInfo(loc, "energy-charge", String.valueOf(charge));
+        SlimefunStorageCompat.setData(loc, "energy-charge", String.valueOf(charge));
     }
 
     public static boolean removeCharge(Location loc, int amount) {

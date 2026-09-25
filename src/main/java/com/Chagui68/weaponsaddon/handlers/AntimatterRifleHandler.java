@@ -6,7 +6,7 @@ import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItem;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import org.bukkit.ChatColor;
+import com.Chagui68.weaponsaddon.utils.ColorUtils;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
@@ -55,7 +55,7 @@ public class AntimatterRifleHandler implements Listener {
         long now = System.currentTimeMillis();
         long cooldownUntil = cooldowns.getOrDefault(playerId, 0L);
         if (cooldownUntil > now) {
-            p.sendMessage(ChatColor.RED + "⚠ Rifle cooling down...");
+            p.sendMessage(ColorUtils.component("&c⚠ Rifle cooling down..."));
             return;
         }
 
@@ -98,15 +98,15 @@ public class AntimatterRifleHandler implements Listener {
             double finalDamage = WeaponUtils.calculateDamage(item, 8.0, target);
             target.damage(finalDamage, p);
 
-            p.sendMessage(ChatColor.DARK_RED + "☢ " + ChatColor.RED + "ANTIMATTER ANNIHILATION!");
-            p.sendMessage(ChatColor.GRAY + "Target eliminated at " +
-                    String.format("%.1f", result.getHitPosition().distance(p.getEyeLocation().toVector()))
-                    + " blocks");
+            p.sendMessage(ColorUtils.component("&4☢ &cANTIMATTER ANNIHILATION!"));
+            p.sendMessage(ColorUtils.component("&7Target eliminated at "
+                    + String.format("%.1f", result.getHitPosition().distance(p.getEyeLocation().toVector()))
+                    + " blocks"));
 
             long cooldownTicks = WeaponUtils.calculateFireInterval(item, 320L);
             cooldowns.put(playerId, now + Math.max(1L, cooldownTicks) * 50L);
         } else {
-            p.sendMessage(ChatColor.RED + "✗ No target in range");
+            p.sendMessage(ColorUtils.component("&c✗ No target in range"));
             p.getWorld().playSound(p.getLocation(), Sound.BLOCK_DISPENSER_FAIL, 1.0f, 1.0f);
         }
     }

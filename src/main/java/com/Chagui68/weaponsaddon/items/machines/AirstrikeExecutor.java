@@ -1,6 +1,6 @@
 package com.Chagui68.weaponsaddon.items.machines;
 
-import org.bukkit.ChatColor;
+import com.Chagui68.weaponsaddon.utils.ColorUtils;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -26,7 +26,7 @@ public class AirstrikeExecutor {
         JavaPlugin plugin = JavaPlugin.getProvidingPlugin(AirstrikeExecutor.class);
 
         if (!isLoadedAndInsideBorder(target)) {
-            p.sendMessage(ChatColor.RED + "[Terminal] Bombardment aborted: target is no longer safely loaded.");
+            p.sendMessage(ColorUtils.component("&c[Terminal] Bombardment aborted: target is no longer safely loaded."));
             return;
         }
 
@@ -36,19 +36,19 @@ public class AirstrikeExecutor {
             @Override
             public void run() {
                 if (wave >= 2) {
-                    p.sendMessage(ChatColor.GREEN + "✓ [Terminal] Bombardment complete");
+                    p.sendMessage(ColorUtils.component("&a✓ [Terminal] Bombardment complete"));
                     cancel();
                     return;
                 }
 
                 if (!isLoadedAndInsideBorder(target)) {
-                    p.sendMessage(ChatColor.RED + "[Terminal] Bombardment aborted: target chunk unloaded.");
+                    p.sendMessage(ColorUtils.component("&c[Terminal] Bombardment aborted: target chunk unloaded."));
                     cancel();
                     return;
                 }
 
                 wave++;
-                p.sendMessage(ChatColor.DARK_RED + "💣 [Terminal] Wave " + wave + "/2 - Target Locked!");
+                p.sendMessage(ColorUtils.component("&4💣 [Terminal] Wave " + wave + "/2 - Target Locked!"));
 
                 for (int i = 0; i < 4; i++) {
                     double offsetX = (Math.random() - 0.5) * 15;

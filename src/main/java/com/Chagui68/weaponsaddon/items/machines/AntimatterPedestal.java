@@ -7,7 +7,7 @@ import com.github.drakescraft_labs.slimefun4.api.recipes.RecipeType;
 import com.github.drakescraft_labs.slimefun4.api.SlimefunAddon;
 import com.github.drakescraft_labs.slimefun4.core.handlers.BlockPlaceHandler;
 import com.Chagui68.weaponsaddon.items.components.MilitaryComponents;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
+import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -38,7 +38,7 @@ public class AntimatterPedestal extends SlimefunItem {
             @Override
             public void onPlayerPlace(BlockPlaceEvent e) {
                 Block b = e.getBlock();
-                BlockStorage.addBlockInfo(b, "id", "MA_ANTIMATTER_PEDESTAL");
+                SlimefunStorageCompat.setData(b, "id", "MA_ANTIMATTER_PEDESTAL");
             }
         });
     }

@@ -17,7 +17,7 @@ import com.github.drakescraft_labs.slimefun4.core.handlers.BlockPlaceHandler;
 import com.github.drakescraft_labs.slimefun4.core.networks.energy.EnergyNetComponentType;
 import com.github.drakescraft_labs.slimefun4.legacy.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
+import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -126,7 +126,7 @@ public class SniperTurret extends CustomRecipeItem implements EnergyNetComponent
             @Override
             public void onPlayerPlace(@Nonnull BlockPlaceEvent e) {
                 e.getBlock().setType(Material.LIGHT);
-                BlockStorage.addBlockInfo(e.getBlock(), "id", "MA_SNIPER_TURRET");
+                SlimefunStorageCompat.setData(e.getBlock(), "id", "MA_SNIPER_TURRET");
                 spawnPvzModel(e.getBlock().getLocation());
             }
         });
@@ -172,7 +172,7 @@ public class SniperTurret extends CustomRecipeItem implements EnergyNetComponent
 
         int cooldown = readCooldown(loc);
         if (cooldown > 0) {
-            BlockStorage.addBlockInfo(loc, "cooldown", String.valueOf(cooldown - 1));
+            SlimefunStorageCompat.setData(loc, "cooldown", String.valueOf(cooldown - 1));
             LivingEntity target = findTarget(loc);
             updateModelRotation(loc, target);
             return;
@@ -189,18 +189,18 @@ public class SniperTurret extends CustomRecipeItem implements EnergyNetComponent
         }
 
         shoot(loc, target);
-        BlockStorage.addBlockInfo(loc, "cooldown", String.valueOf(SHOT_COOLDOWN));
+        SlimefunStorageCompat.setData(loc, "cooldown", String.valueOf(SHOT_COOLDOWN));
     }
 
     private int readCooldown(Location loc) {
-        String value = BlockStorage.getLocationInfo(loc, "cooldown");
+        String value = SlimefunStorageCompat.getData(loc, "cooldown");
         if (value == null) {
             return 0;
         }
         try {
             return Math.max(0, Integer.parseInt(value));
         } catch (NumberFormatException ignored) {
-            BlockStorage.addBlockInfo(loc, "cooldown", "0");
+            SlimefunStorageCompat.setData(loc, "cooldown", "0");
             return 0;
         }
     }
@@ -392,7 +392,7 @@ public class SniperTurret extends CustomRecipeItem implements EnergyNetComponent
             return;
         }
 
-        String id = BlockStorage.getLocationInfo(loc, "id");
+        String id = SlimefunStorageCompat.getData(loc, "id");
         if (!"MA_SNIPER_TURRET".equals(id)) {
             removePvzModel(loc);
             interaction.remove();
@@ -400,7 +400,7 @@ public class SniperTurret extends CustomRecipeItem implements EnergyNetComponent
         }
 
         interaction.setMetadata("MA_DISMANTLED", new FixedMetadataValue(WeaponsAddon.getInstance(), true));
-        BlockStorage.clearBlockInfo(loc);
+        SlimefunStorageCompat.clear(loc);
         loc.getBlock().setType(Material.AIR, false);
         interaction.getWorld().playSound(loc, Sound.BLOCK_LANTERN_BREAK, 1f, 1f);
         interaction.getWorld().dropItemNaturally(loc, SNIPER_TURRET.clone());

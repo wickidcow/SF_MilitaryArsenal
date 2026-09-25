@@ -1,6 +1,6 @@
 package com.Chagui68.weaponsaddon.commands;
 
-import org.bukkit.ChatColor;
+import com.Chagui68.weaponsaddon.utils.ColorUtils;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -20,12 +20,12 @@ public class WeaponsCommand implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, Command command, String label,
             String[] args) {
         if (!sender.hasPermission("militaryarsenal.admin")) {
-            sender.sendMessage(ChatColor.RED + "You don't have permission to use this command!");
+            sender.sendMessage(ColorUtils.component("&cYou don't have permission to use this command!"));
             return true;
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "Usage: /weapons <delete|reload> <args>");
+            sender.sendMessage(ColorUtils.component("&cUsage: /weapons <delete|reload> <args>"));
             return true;
         }
 
@@ -34,7 +34,7 @@ public class WeaponsCommand implements CommandExecutor, TabCompleter {
         if (cmdType.equals("reload")) {
             // Already handled in switch below but let's fix the validation
         } else if (args.length < 2 && cmdType.equals("delete")) {
-            sender.sendMessage(ChatColor.RED + "Usage: /weapons delete <args>");
+            sender.sendMessage(ColorUtils.component("&cUsage: /weapons delete <args>"));
             return true;
         }
 
@@ -42,9 +42,9 @@ public class WeaponsCommand implements CommandExecutor, TabCompleter {
             case "reload":
                 try {
                     com.Chagui68.weaponsaddon.WeaponsAddon.getInstance().reloadConfig();
-                    sender.sendMessage(ChatColor.GREEN + "✓ Configuration reloaded successfully!");
+                    sender.sendMessage(ColorUtils.component("&a✓ Configuration reloaded successfully!"));
                 } catch (Exception e) {
-                    sender.sendMessage(ChatColor.RED + "Error reloading configuration: " + e.getMessage());
+                    sender.sendMessage(ColorUtils.component("&cError reloading configuration: " + e.getMessage()));
                 }
                 break;
 
@@ -52,12 +52,12 @@ public class WeaponsCommand implements CommandExecutor, TabCompleter {
                 String deleteType = args[1].toLowerCase();
                 if (deleteType.equals("turrets")) {
                     // Logic for turrets... (Keeping it simple for now as it's a large block)
-                    sender.sendMessage(ChatColor.YELLOW + "Turret cleanup logic integration...");
+                    sender.sendMessage(ColorUtils.component("&eTurret cleanup logic integration..."));
                 }
                 break;
 
             default:
-                sender.sendMessage(ChatColor.RED + "Unknown type. Use 'delete' or 'reload'.");
+                sender.sendMessage(ColorUtils.component("&cUnknown type. Use 'delete' or 'reload'."));
                 break;
         }
 

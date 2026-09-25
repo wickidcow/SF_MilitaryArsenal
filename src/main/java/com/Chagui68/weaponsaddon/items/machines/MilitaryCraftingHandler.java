@@ -1,11 +1,13 @@
 package com.Chagui68.weaponsaddon.items.machines;
 
 import com.Chagui68.weaponsaddon.items.CustomRecipeItem;
+import com.Chagui68.weaponsaddon.utils.ColorUtils;
 import com.Chagui68.weaponsaddon.utils.MachineSessionManager;
+import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
 import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItem;
 import com.github.drakescraft_labs.slimefun4.libraries.dough.items.CustomItemStack;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -31,6 +33,7 @@ import static org.bukkit.Bukkit.createInventory;
 public class MilitaryCraftingHandler implements Listener {
 
     private static final String MACHINE_ID = "MA_MILITARY_CRAFTING_TABLE";
+    private static final Component TITLE = ColorUtils.component("&4Military Crafting Table");
     private static final Map<UUID, Location> openTables = new HashMap<>();
     private static final List<CustomRecipeItem> RECIPE_CACHE = new ArrayList<>();
     private static final int[] GRID_SLOTS = {
@@ -53,19 +56,19 @@ public class MilitaryCraftingHandler implements Listener {
 
     private static void openTableGUI(Player p, Location blockLoc) {
         if (!MachineSessionManager.tryAcquire(p, blockLoc)) {
-            p.sendMessage(ChatColor.RED + "This machine is already in use. Close your current machine GUI and try again.");
+            p.sendMessage(ColorUtils.component("&cThis machine is already in use. Close your current machine GUI and try again."));
             return;
         }
 
         try {
-            Inventory inv = createInventory(null, 54, ChatColor.DARK_RED + "Military Crafting Table");
+            Inventory inv = createInventory(null, 54, TITLE);
 
             ItemStack background = new CustomItemStack(Material.GRAY_STAINED_GLASS_PANE, " ");
             for (int i = 0; i < 54; i++) {
                 inv.setItem(i, background);
             }
 
-            ItemStack border = new CustomItemStack(Material.ORANGE_STAINED_GLASS_PANE, ChatColor.GOLD + "▓");
+            ItemStack border = new CustomItemStack(Material.ORANGE_STAINED_GLASS_PANE, "&6▓");
             int[] borderSlots = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 18, 27, 36, 45, 46, 47, 48, 49, 50, 51, 52,
                     17, 26, 35, 44 };
             for (int slot : borderSlots) {
@@ -73,7 +76,7 @@ public class MilitaryCraftingHandler implements Listener {
             }
 
             for (int i = 0; i < GRID_SLOTS.length; i++) {
-                String itemData = BlockStorage.getLocationInfo(blockLoc, "slot_" + i);
+                String itemData = SlimefunStorageCompat.getData(blockLoc, "slot_" + i);
                 if (itemData != null && !itemData.isEmpty()) {
                     ItemStack item = deserializeItemStack(itemData);
                     if (item != null) {
@@ -85,27 +88,27 @@ public class MilitaryCraftingHandler implements Listener {
             }
 
             inv.setItem(25, new CustomItemStack(Material.LIME_STAINED_GLASS_PANE,
-                    ChatColor.GREEN + "⬇ RESULT ⬇",
+                    "&a⬇ RESULT ⬇",
                     "",
-                    ChatColor.GRAY + "Place items in 4×4 grid",
-                    ChatColor.GRAY + "Click CRAFT button"));
+                    "&7Place items in 4×4 grid",
+                    "&7Click CRAFT button"));
 
             inv.setItem(OUTPUT_SLOT, null);
 
             inv.setItem(53, new CustomItemStack(Material.SMITHING_TABLE,
-                    ChatColor.GOLD + "⚒ Military Crafting Table",
+                    "&6⚒ Military Crafting Table",
                     "",
-                    ChatColor.YELLOW + "4×4 Advanced Crafting",
-                    ChatColor.GRAY + "For weapons & components",
+                    "&e4×4 Advanced Crafting",
+                    "&7For weapons & components",
                     "",
-                    ChatColor.AQUA + "Grid: 16 slots (4×4)",
-                    ChatColor.GREEN + "✓ Inventory persists"));
+                    "&bGrid: 16 slots (4×4)",
+                    "&a✓ Inventory persists"));
 
             inv.setItem(CRAFT_BUTTON, new CustomItemStack(Material.CRAFTING_TABLE,
-                    ChatColor.GREEN + "▶ CRAFT ◀",
+                    "&a▶ CRAFT ◀",
                     "",
-                    ChatColor.GRAY + "Click to craft item",
-                    ChatColor.YELLOW + "Recipe must match exactly"));
+                    "&7Click to craft item",
+                    "&eRecipe must match exactly"));
 
             openTables.put(p.getUniqueId(), blockLoc);
             p.openInventory(inv);
@@ -120,7 +123,7 @@ public class MilitaryCraftingHandler implements Listener {
     public void onInventoryClose(InventoryCloseEvent e) {
         if (!(e.getPlayer() instanceof Player p))
             return;
-        if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Military Crafting Table"))
+        if (!e.getView().title().equals(TITLE))
             return;
 
         Location blockLoc = openTables.remove(p.getUniqueId());
@@ -135,9 +138,9 @@ public class MilitaryCraftingHandler implements Listener {
             for (int i = 0; i < GRID_SLOTS.length; i++) {
                 ItemStack item = inv.getItem(GRID_SLOTS[i]);
                 if (item != null && item.getType() != Material.AIR) {
-                    BlockStorage.addBlockInfo(blockLoc, "slot_" + i, serializeItemStack(item));
+                    SlimefunStorageCompat.setData(blockLoc, "slot_" + i, serializeItemStack(item));
                 } else {
-                    BlockStorage.addBlockInfo(blockLoc, "slot_" + i, "");
+                    SlimefunStorageCompat.setData(blockLoc, "slot_" + i, "");
                 }
             }
         } finally {
@@ -149,7 +152,7 @@ public class MilitaryCraftingHandler implements Listener {
     public void onInventoryClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player p))
             return;
-        if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Military Crafting Table"))
+        if (!e.getView().title().equals(TITLE))
             return;
 
         if (e.isShiftClick()) {
@@ -185,7 +188,7 @@ public class MilitaryCraftingHandler implements Listener {
 
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent e) {
-        if (!e.getView().getTitle().equals(ChatColor.DARK_RED + "Military Crafting Table"))
+        if (!e.getView().title().equals(TITLE))
             return;
 
         int topSize = e.getView().getTopInventory().getSize();
@@ -197,7 +200,7 @@ public class MilitaryCraftingHandler implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {
         Block block = e.getBlock();
-        SlimefunItem sfItem = BlockStorage.check(block);
+        SlimefunItem sfItem = SlimefunStorageCompat.getItem(block);
         if (sfItem == null || !MACHINE_ID.equals(sfItem.getId())) {
             return;
         }
@@ -205,13 +208,13 @@ public class MilitaryCraftingHandler implements Listener {
         Location blockLoc = block.getLocation();
         for (int i = 0; i < GRID_SLOTS.length; i++) {
             String key = "slot_" + i;
-            String itemData = BlockStorage.getLocationInfo(blockLoc, key);
+            String itemData = SlimefunStorageCompat.getData(blockLoc, key);
             if (itemData != null && !itemData.isEmpty()) {
                 ItemStack item = deserializeItemStack(itemData);
                 if (item != null) {
                     block.getWorld().dropItemNaturally(blockLoc, item);
                 }
-                BlockStorage.addBlockInfo(blockLoc, key, "");
+                SlimefunStorageCompat.setData(blockLoc, key, "");
             }
         }
     }
@@ -219,7 +222,7 @@ public class MilitaryCraftingHandler implements Listener {
     private static void attemptCraft(Player p, Inventory inv) {
         ItemStack existingOutput = inv.getItem(OUTPUT_SLOT);
         if (existingOutput != null && existingOutput.getType() != Material.AIR) {
-            p.sendMessage(ChatColor.RED + "✗ Take the current result before crafting again.");
+            p.sendMessage(ColorUtils.component("&c✗ Take the current result before crafting again."));
             return;
         }
 
@@ -246,13 +249,16 @@ public class MilitaryCraftingHandler implements Listener {
 
                 ItemStack output = customItem.getItem().clone();
                 inv.setItem(OUTPUT_SLOT, output);
-                p.sendMessage(ChatColor.GREEN + "✓ Crafted: " + ChatColor.WHITE
-                        + ChatColor.stripColor(output.getItemMeta().getDisplayName()));
+                Component displayName = output.getItemMeta().displayName();
+                String plainName = displayName == null
+                        ? output.getType().name()
+                        : PlainTextComponentSerializer.plainText().serialize(displayName);
+                p.sendMessage(ColorUtils.component("&a✓ Crafted: &f" + plainName));
                 return;
             }
         }
 
-        p.sendMessage(ChatColor.RED + "✗ Invalid recipe!");
+        p.sendMessage(ColorUtils.component("&c✗ Invalid recipe!"));
     }
 
     private static void takeOutput(Player p, Inventory inv) {

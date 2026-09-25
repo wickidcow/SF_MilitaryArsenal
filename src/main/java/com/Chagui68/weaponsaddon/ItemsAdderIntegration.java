@@ -150,10 +150,10 @@ public final class ItemsAdderIntegration {
 
     private static void copyMilitaryMeta(ItemMeta source, ItemMeta target) {
         if (source.hasDisplayName()) {
-            target.setDisplayName(source.getDisplayName());
+            target.displayName(source.displayName());
         }
         if (source.hasLore()) {
-            target.setLore(source.getLore());
+            target.lore(source.lore());
         }
 
         target.setUnbreakable(source.isUnbreakable());
@@ -170,15 +170,10 @@ public final class ItemsAdderIntegration {
         source.getPersistentDataContainer().copyTo(target.getPersistentDataContainer(), true);
     }
 
-    @SuppressWarnings("deprecation")
     private static void copyVisualModelMeta(ItemMeta source, ItemMeta target) {
-        if (source.hasCustomModelData()) {
-            target.setCustomModelData(source.getCustomModelData());
-        }
-
-        // Newer Minecraft versions can use data components such as item_model and the
-        // expanded custom-model-data component. Copy them reflectively so this remains
-        // compatible with the Java 21 bytecode target while building against Paper 26.2+.
+        // Modern Minecraft stores model metadata in data components. Copy both supported
+        // model components reflectively so this remains portable across the Paper versions
+        // Military Arsenal supports without compiling against the removed integer API.
         copyOptionalMetaValue(source, target, "getItemModel", "setItemModel");
         copyOptionalMetaValue(source, target, "getCustomModelDataComponent", "setCustomModelDataComponent");
     }

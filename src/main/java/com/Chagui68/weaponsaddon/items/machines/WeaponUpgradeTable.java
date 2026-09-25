@@ -13,7 +13,7 @@ import com.github.drakescraft_labs.slimefun4.core.handlers.BlockUseHandler;
 import com.github.drakescraft_labs.slimefun4.core.handlers.BlockPlaceHandler;
 import com.github.drakescraft_labs.slimefun4.core.networks.energy.EnergyNetComponentType;
 import com.github.drakescraft_labs.slimefun4.implementation.SlimefunItems;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
+import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
 import javax.annotation.Nonnull;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -61,7 +61,7 @@ public class WeaponUpgradeTable extends SlimefunItem implements EnergyNetCompone
             @Override
             public void onPlayerPlace(@Nonnull BlockPlaceEvent e) {
                 Block b = e.getBlock();
-                BlockStorage.addBlockInfo(b, "id", "MA_WEAPON_UPGRADE_TABLE");
+                SlimefunStorageCompat.setData(b, "id", "MA_WEAPON_UPGRADE_TABLE");
             }
         });
 
