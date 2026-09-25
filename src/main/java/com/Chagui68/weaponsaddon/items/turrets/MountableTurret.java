@@ -16,7 +16,7 @@ import com.github.drakescraft_labs.slimefun4.core.handlers.BlockPlaceHandler;
 import com.github.drakescraft_labs.slimefun4.core.networks.energy.EnergyNetComponentType;
 import com.github.drakescraft_labs.slimefun4.legacy.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
+import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -106,7 +106,7 @@ public class MountableTurret extends CustomRecipeItem implements EnergyNetCompon
             @Override
             public void onPlayerPlace(@Nonnull BlockPlaceEvent e) {
                 e.getBlock().setType(Material.LIGHT);
-                BlockStorage.addBlockInfo(e.getBlock(), "id", "MA_MOUNTABLE_TURRET");
+                SlimefunStorageCompat.setData(e.getBlock(), "id", "MA_MOUNTABLE_TURRET");
                 spawnModel(e.getBlock().getLocation());
             }
         });
@@ -342,7 +342,7 @@ public class MountableTurret extends CustomRecipeItem implements EnergyNetCompon
             return;
         }
 
-        String id = BlockStorage.getLocationInfo(loc, "id");
+        String id = SlimefunStorageCompat.getData(loc, "id");
         if (!"MA_MOUNTABLE_TURRET".equals(id)) {
             removeModel(loc);
             interaction.remove();
@@ -350,7 +350,7 @@ public class MountableTurret extends CustomRecipeItem implements EnergyNetCompon
         }
 
         interaction.setMetadata("MA_DISMANTLED", new FixedMetadataValue(WeaponsAddon.getInstance(), true));
-        BlockStorage.clearBlockInfo(loc);
+        SlimefunStorageCompat.clear(loc);
         loc.getBlock().setType(Material.AIR, false);
         interaction.getWorld().playSound(loc, Sound.BLOCK_LANTERN_BREAK, 1f, 1f);
         interaction.getWorld().dropItemNaturally(loc, MOUNTABLE_TURRET.clone());
@@ -372,7 +372,7 @@ public class MountableTurret extends CustomRecipeItem implements EnergyNetCompon
 
     private void shoot(Player shooter, Interaction interaction) {
         Location loc = getBaseLocation(interaction);
-        if (loc == null || !"MA_MOUNTABLE_TURRET".equals(BlockStorage.getLocationInfo(loc, "id"))) {
+        if (loc == null || !"MA_MOUNTABLE_TURRET".equals(SlimefunStorageCompat.getData(loc, "id"))) {
             return;
         }
 
@@ -388,7 +388,7 @@ public class MountableTurret extends CustomRecipeItem implements EnergyNetCompon
             shooter.playSound(shooter.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1f, 0.5f);
             return;
         }
-        BlockStorage.addBlockInfo(loc, SHOT_READY_KEY, String.valueOf(now + FIRE_INTERVAL_MS));
+        SlimefunStorageCompat.setData(loc, SHOT_READY_KEY, String.valueOf(now + FIRE_INTERVAL_MS));
 
         Location start = interaction.getLocation().clone().add(0, 1.1, 0);
         Vector direction = shooter.getEyeLocation().getDirection().normalize();
@@ -444,14 +444,14 @@ public class MountableTurret extends CustomRecipeItem implements EnergyNetCompon
     }
 
     private long readReadyAt(Location loc) {
-        String value = BlockStorage.getLocationInfo(loc, SHOT_READY_KEY);
+        String value = SlimefunStorageCompat.getData(loc, SHOT_READY_KEY);
         if (value == null) {
             return 0L;
         }
         try {
             return Long.parseLong(value);
         } catch (NumberFormatException ignored) {
-            BlockStorage.addBlockInfo(loc, SHOT_READY_KEY, "0");
+            SlimefunStorageCompat.setData(loc, SHOT_READY_KEY, "0");
             return 0L;
         }
     }
