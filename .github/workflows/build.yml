@@ -78,6 +78,26 @@ jobs:
           grep -Fq 'InventoryClickEvent' "$manager"
           grep -Fq 'InventoryDragEvent' "$manager"
           grep -Fq 'event.isShiftClick()' "$manager"
+      - name: Install Slimefun Legacy 4.1.60 API
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .deps
+          gh release download v4.1.60 \
+            --repo wickidcow/Slimefun-Legacy \
+            --pattern 'Slimefun-Legacy4.1.60.jar' \
+            --dir .deps \
+            --clobber
+          mvn -B --no-transfer-progress install:install-file \
+            -Dfile=.deps/Slimefun-Legacy4.1.60.jar \
+            -DgroupId=com.github.wickidcow \
+            -DartifactId=Slimefun-Legacy \
+            -Dversion=4.1.60 \
+            -Dpackaging=jar \
+            -DgeneratePom=true
+
       - name: Verify Paper 1.21.11 compile baseline
         run: mvn -B -e -Dmaven.test.skip=true clean package --file pom.xml
       - name: Verify Paper 26.2 compile compatibility
