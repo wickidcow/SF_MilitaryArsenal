@@ -1,7 +1,7 @@
 package com.Chagui68.weaponsaddon.items.turrets;
 
 import com.Chagui68.weaponsaddon.items.components.MilitaryComponents;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
+import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -44,7 +44,7 @@ public final class TurretUpgradeManager {
     }
 
     public static int getCurrentLevel(Location loc) {
-        String levelStr = BlockStorage.getLocationInfo(loc, "turret-level");
+        String levelStr = SlimefunStorageCompat.getData(loc, "turret-level");
         if (levelStr == null) {
             return 1;
         }
@@ -57,7 +57,7 @@ public final class TurretUpgradeManager {
     }
 
     public static void setLevel(Location loc, int level) {
-        BlockStorage.addBlockInfo(loc, "turret-level", String.valueOf(Math.max(1, level)));
+        SlimefunStorageCompat.setData(loc, "turret-level", String.valueOf(Math.max(1, level)));
     }
 
     public static double getRangeForLevel(double baseRange, int level) {
