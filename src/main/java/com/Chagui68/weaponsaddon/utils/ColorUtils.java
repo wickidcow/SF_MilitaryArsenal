@@ -6,6 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 public final class ColorUtils {
 
@@ -22,6 +23,26 @@ public final class ColorUtils {
             .hexColors()
             .useUnusualXRepeatedCharacterHexFormat()
             .build();
+
+    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
+
+    public static final String BLACK = translate("&0");
+    public static final String DARK_BLUE = translate("&1");
+    public static final String DARK_GREEN = translate("&2");
+    public static final String DARK_AQUA = translate("&3");
+    public static final String DARK_RED = translate("&4");
+    public static final String DARK_PURPLE = translate("&5");
+    public static final String GOLD = translate("&6");
+    public static final String GRAY = translate("&7");
+    public static final String DARK_GRAY = translate("&8");
+    public static final String BLUE = translate("&9");
+    public static final String GREEN = translate("&a");
+    public static final String AQUA = translate("&b");
+    public static final String RED = translate("&c");
+    public static final String LIGHT_PURPLE = translate("&d");
+    public static final String YELLOW = translate("&e");
+    public static final String WHITE = translate("&f");
+    public static final String RESET = translate("&r");
 
     private ColorUtils() {
     }
@@ -59,6 +80,13 @@ public final class ColorUtils {
             translated.add(translate(line));
         }
         return translated;
+    }
+
+    public static String strip(String message) {
+        if (message == null) {
+            return null;
+        }
+        return PLAIN.serialize(SECTION.deserialize(message));
     }
 
     public static List<Component> componentList(List<String> list) {
