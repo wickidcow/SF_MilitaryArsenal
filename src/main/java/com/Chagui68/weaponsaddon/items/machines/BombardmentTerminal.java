@@ -15,9 +15,10 @@ import com.github.drakescraft_labs.slimefun4.core.networks.energy.EnergyNetCompo
 import com.github.drakescraft_labs.slimefun4.libraries.dough.items.CustomItemStack;
 import com.github.drakescraft_labs.slimefun4.core.handlers.BlockBreakHandler;
 import com.github.drakescraft_labs.slimefun4.legacy.Objects.handlers.BlockTicker;
-import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
-import org.bukkit.ChatColor;
+import com.xzavier0722.mc.plugin.slimefun4.storage.controller.ASlimefunDataContainer;
+import com.Chagui68.weaponsaddon.utils.ColorUtils;
+import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -43,6 +44,7 @@ public class BombardmentTerminal extends CustomRecipeItem implements EnergyNetCo
 
     private static final int ENERGY_CAPACITY = 4000000;
     private static final int ENERGY_PER_USE = 2000000;
+    public static final Component GUI_TITLE = ColorUtils.component("&4Bombardment Terminal");
 
     public static final SlimefunItemStack BOMBARDMENT_TERMINAL = new SlimefunItemStack(
             "MA_BOMBARDMENT_TERMINAL",
@@ -90,7 +92,7 @@ public class BombardmentTerminal extends CustomRecipeItem implements EnergyNetCo
         addItemHandler(new BlockPlaceHandler(false) {
             @Override
             public void onPlayerPlace(BlockPlaceEvent e) {
-                BlockStorage.addBlockInfo(e.getBlock(), "id", "MA_BOMBARDMENT_TERMINAL");
+                SlimefunStorageCompat.setData(e.getBlock(), "id", "MA_BOMBARDMENT_TERMINAL");
                 spawnSatelliteModel(e.getBlock().getLocation());
             }
         });
@@ -109,7 +111,7 @@ public class BombardmentTerminal extends CustomRecipeItem implements EnergyNetCo
 
         addItemHandler(new BlockTicker() {
             @Override
-            public void tick(Block b, SlimefunItem item, Config data) {
+            public void tick(Block b, SlimefunItem item, ASlimefunDataContainer data) {
                 updateHologram(b.getLocation());
             }
 
@@ -228,35 +230,35 @@ public class BombardmentTerminal extends CustomRecipeItem implements EnergyNetCo
     }
 
     private void openTerminalGUI(Player p, Location blockLoc, int currentEnergy) {
-        Inventory inv = createInventory(null, 27, ChatColor.DARK_RED + "Bombardment Terminal");
+        Inventory inv = createInventory(null, 27, GUI_TITLE);
 
         for (int i = 0; i < 27; i++) {
             inv.setItem(i, new CustomItemStack(Material.GRAY_STAINED_GLASS_PANE, " "));
         }
 
         inv.setItem(10, new CustomItemStack(Material.RED_STAINED_GLASS_PANE,
-                ChatColor.RED + "⬇ TNT SLOT ⬇"));
+                "&c⬇ TNT SLOT ⬇"));
         inv.setItem(11, null);
 
         inv.setItem(15, new CustomItemStack(Material.YELLOW_STAINED_GLASS_PANE,
-                ChatColor.YELLOW + "⬇ NETHER STAR SLOT ⬇"));
+                "&e⬇ NETHER STAR SLOT ⬇"));
         inv.setItem(16, null);
 
-        String energyStatus = currentEnergy >= ENERGY_PER_USE ? ChatColor.GREEN + "✓ Ready"
-                : ChatColor.RED + "✗ Low energy";
+        String energyStatus = currentEnergy >= ENERGY_PER_USE ? "&a✓ Ready"
+                : "&c✗ Low energy";
 
         inv.setItem(22, new CustomItemStack(Material.LIME_STAINED_GLASS_PANE,
-                ChatColor.GREEN + "▶ ACTIVATE ◀",
-                ChatColor.GRAY + "Requires:",
-                ChatColor.YELLOW + " • 10 TNT",
-                ChatColor.YELLOW + " • 5 Nether Stars",
-                ChatColor.AQUA + " • 2M J energy",
+                "&a▶ ACTIVATE ◀",
+                "&7Requires:",
+                "&e • 10 TNT",
+                "&e • 5 Nether Stars",
+                "&b • 2M J energy",
                 "",
                 energyStatus));
 
         inv.setItem(4, new CustomItemStack(Material.OBSERVER,
-                ChatColor.DARK_RED + "⚡ TERMINAL ⚡",
-                ChatColor.AQUA + "Energy: " + formatEnergy(currentEnergy) + "/" + formatEnergy(ENERGY_CAPACITY)));
+                "&4⚡ TERMINAL ⚡",
+                "&bEnergy: " + formatEnergy(currentEnergy) + "/" + formatEnergy(ENERGY_CAPACITY)));
 
         p.openInventory(inv);
         TerminalClickHandler.registerInventory(p, inv, blockLoc);
