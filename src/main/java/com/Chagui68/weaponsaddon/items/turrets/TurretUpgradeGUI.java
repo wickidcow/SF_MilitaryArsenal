@@ -1,7 +1,7 @@
 package com.Chagui68.weaponsaddon.items.turrets;
 
 import com.Chagui68.weaponsaddon.items.machines.energy.EnergyManager;
-import org.bukkit.ChatColor;
+import com.Chagui68.weaponsaddon.utils.ColorUtils;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -12,6 +12,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import static org.bukkit.Bukkit.createInventory;
 
 public class TurretUpgradeGUI implements Listener {
     private static final Map<UUID, TurretSession> OPEN_SESSIONS = new HashMap<>();
+    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
 
     public static void open(
             Player player,
@@ -42,7 +44,7 @@ public class TurretUpgradeGUI implements Listener {
         Inventory inv = createInventory(
                 null,
                 54,
-                ChatColor.DARK_RED + turretName + " " + ChatColor.GRAY + "Lv." + currentLevel
+                ColorUtils.component("&4" + turretName + " &7Lv." + currentLevel)
         );
 
         ItemStack background = item(Material.BLACK_STAINED_GLASS_PANE, " ");
@@ -52,16 +54,16 @@ public class TurretUpgradeGUI implements Listener {
 
         inv.setItem(4, item(
                 Material.NETHERITE_BLOCK,
-                ChatColor.GOLD + turretName,
+                ColorUtils.GOLD + turretName,
                 "",
-                ChatColor.YELLOW + "Level: " + ChatColor.GREEN + currentLevel + ChatColor.GRAY + "/" + maxLevel,
-                ChatColor.YELLOW + "Energy: " + ChatColor.AQUA + energy + " / "
+                ColorUtils.YELLOW + "Level: " + ColorUtils.GREEN + currentLevel + ColorUtils.GRAY + "/" + maxLevel,
+                ColorUtils.YELLOW + "Energy: " + ColorUtils.AQUA + energy + " / "
                         + TurretUpgradeManager.getCapacityForLevel(baseCapacity, currentLevel) + " J",
-                ChatColor.YELLOW + "Energy/Shot: " + ChatColor.AQUA
+                ColorUtils.YELLOW + "Energy/Shot: " + ColorUtils.AQUA
                         + TurretUpgradeManager.getEnergyCostForLevel(baseEnergyCost, currentLevel) + " J"
         ));
 
-        inv.setItem(11, item(Material.LIGHT_BLUE_STAINED_GLASS_PANE, ChatColor.AQUA + "⬆ Progression"));
+        inv.setItem(11, item(Material.LIGHT_BLUE_STAINED_GLASS_PANE, ColorUtils.AQUA + "⬆ Progression"));
         for (int i = 0; i < 4; i++) {
             int level = i + 1;
             if (level <= maxLevel) {
@@ -80,52 +82,52 @@ public class TurretUpgradeGUI implements Listener {
                 );
             }
         }
-        inv.setItem(16, item(Material.CYAN_STAINED_GLASS_PANE, ChatColor.AQUA + "📊 Stats"));
+        inv.setItem(16, item(Material.CYAN_STAINED_GLASS_PANE, ColorUtils.AQUA + "📊 Stats"));
 
         double currentRange = TurretUpgradeManager.getRangeForLevel(baseRange, currentLevel);
         double currentDamage = TurretUpgradeManager.getDamageForLevel(baseDamage, currentLevel);
 
         List<String> rangeLore = new ArrayList<>();
-        rangeLore.add(ChatColor.WHITE + "Current: " + ChatColor.GREEN + String.format("%.1f", currentRange) + " blocks");
+        rangeLore.add(ColorUtils.WHITE + "Current: " + ColorUtils.GREEN + String.format("%.1f", currentRange) + " blocks");
         if (currentLevel < maxLevel) {
-            rangeLore.add(ChatColor.WHITE + "Next: " + ChatColor.AQUA
+            rangeLore.add(ColorUtils.WHITE + "Next: " + ColorUtils.AQUA
                     + String.format("%.1f", TurretUpgradeManager.getRangeForLevel(baseRange, currentLevel + 1))
                     + " blocks");
         }
-        inv.setItem(19, item(Material.ARROW, ChatColor.AQUA + "Range", rangeLore.toArray(new String[0])));
+        inv.setItem(19, item(Material.ARROW, ColorUtils.AQUA + "Range", rangeLore.toArray(new String[0])));
 
         List<String> damageLore = new ArrayList<>();
-        damageLore.add(ChatColor.WHITE + "Current: " + ChatColor.GREEN + String.format("%.1f", currentDamage) + " HP");
+        damageLore.add(ColorUtils.WHITE + "Current: " + ColorUtils.GREEN + String.format("%.1f", currentDamage) + " HP");
         if (currentLevel < maxLevel) {
-            damageLore.add(ChatColor.WHITE + "Next: " + ChatColor.AQUA
+            damageLore.add(ColorUtils.WHITE + "Next: " + ColorUtils.AQUA
                     + String.format("%.1f", TurretUpgradeManager.getDamageForLevel(baseDamage, currentLevel + 1))
                     + " HP");
         }
-        inv.setItem(20, item(Material.REDSTONE, ChatColor.RED + "Damage", damageLore.toArray(new String[0])));
+        inv.setItem(20, item(Material.REDSTONE, ColorUtils.RED + "Damage", damageLore.toArray(new String[0])));
 
         List<String> costLore = new ArrayList<>();
-        costLore.add(ChatColor.WHITE + "Current: " + ChatColor.AQUA
+        costLore.add(ColorUtils.WHITE + "Current: " + ColorUtils.AQUA
                 + TurretUpgradeManager.getEnergyCostForLevel(baseEnergyCost, currentLevel) + " J");
         if (currentLevel < maxLevel) {
-            costLore.add(ChatColor.WHITE + "Next: " + ChatColor.GREEN
+            costLore.add(ColorUtils.WHITE + "Next: " + ColorUtils.GREEN
                     + TurretUpgradeManager.getEnergyCostForLevel(baseEnergyCost, currentLevel + 1) + " J");
         }
-        inv.setItem(21, item(Material.LIGHTNING_ROD, ChatColor.YELLOW + "Energy/Shot", costLore.toArray(new String[0])));
+        inv.setItem(21, item(Material.LIGHTNING_ROD, ColorUtils.YELLOW + "Energy/Shot", costLore.toArray(new String[0])));
 
         List<String> capacityLore = new ArrayList<>();
-        capacityLore.add(ChatColor.WHITE + "Current: " + ChatColor.AQUA
+        capacityLore.add(ColorUtils.WHITE + "Current: " + ColorUtils.AQUA
                 + TurretUpgradeManager.getCapacityForLevel(baseCapacity, currentLevel) + " J");
         if (currentLevel < maxLevel) {
-            capacityLore.add(ChatColor.WHITE + "Next: " + ChatColor.GREEN
+            capacityLore.add(ColorUtils.WHITE + "Next: " + ColorUtils.GREEN
                     + TurretUpgradeManager.getCapacityForLevel(baseCapacity, currentLevel + 1) + " J");
         }
-        inv.setItem(22, item(Material.ENDER_CHEST, ChatColor.LIGHT_PURPLE + "Capacity", capacityLore.toArray(new String[0])));
+        inv.setItem(22, item(Material.ENDER_CHEST, ColorUtils.LIGHT_PURPLE + "Capacity", capacityLore.toArray(new String[0])));
 
         inv.setItem(23, item(
                 Material.EXPERIENCE_BOTTLE,
-                ChatColor.LIGHT_PURPLE + "Player XP",
+                ColorUtils.LIGHT_PURPLE + "Player XP",
                 "",
-                ChatColor.WHITE + "Your XP: " + ChatColor.GREEN + player.getLevel()
+                ColorUtils.WHITE + "Your XP: " + ColorUtils.GREEN + player.getLevel()
         ));
 
         if (currentLevel < maxLevel) {
@@ -138,60 +140,58 @@ public class TurretUpgradeGUI implements Listener {
 
                 inv.setItem(27, item(
                         Material.RED_STAINED_GLASS_PANE,
-                        ChatColor.RED + "Requirements for Level " + (currentLevel + 1)
+                        ColorUtils.RED + "Requirements for Level " + (currentLevel + 1)
                 ));
 
                 List<String> xpLore = new ArrayList<>();
-                xpLore.add(ChatColor.WHITE + "Needed: " + ChatColor.GOLD + requirement.xpLevels);
+                xpLore.add(ColorUtils.WHITE + "Needed: " + ColorUtils.GOLD + requirement.xpLevels);
                 xpLore.add(player.getLevel() >= requirement.xpLevels
-                        ? ChatColor.GREEN + "You have enough ✓"
-                        : ChatColor.RED + "You need " + (requirement.xpLevels - player.getLevel()) + " more");
-                inv.setItem(29, item(Material.EXPERIENCE_BOTTLE, ChatColor.LIGHT_PURPLE + "XP Levels", xpLore.toArray(new String[0])));
+                        ? ColorUtils.GREEN + "You have enough ✓"
+                        : ColorUtils.RED + "You need " + (requirement.xpLevels - player.getLevel()) + " more");
+                inv.setItem(29, item(Material.EXPERIENCE_BOTTLE, ColorUtils.LIGHT_PURPLE + "XP Levels", xpLore.toArray(new String[0])));
 
                 int slot = 30;
                 for (ItemStack required : requirement.items) {
                     boolean has = TurretUpgradeManager.hasItemInInventory(player, required);
-                    String itemName = required.getItemMeta() != null && required.getItemMeta().hasDisplayName()
-                            ? required.getItemMeta().getDisplayName()
-                            : formatMaterialName(required.getType());
+                    String itemName = itemDisplayName(required);
 
                     List<String> itemLore = new ArrayList<>();
-                    itemLore.add(ChatColor.WHITE + "Amount: " + ChatColor.GOLD + required.getAmount());
-                    itemLore.add(has ? ChatColor.GREEN + "You have it ✓" : ChatColor.RED + "Missing ✗");
-                    inv.setItem(slot, item(required.getType(), ChatColor.GOLD + itemName, itemLore.toArray(new String[0])));
+                    itemLore.add(ColorUtils.WHITE + "Amount: " + ColorUtils.GOLD + required.getAmount());
+                    itemLore.add(has ? ColorUtils.GREEN + "You have it ✓" : ColorUtils.RED + "Missing ✗");
+                    inv.setItem(slot, item(required.getType(), ColorUtils.GOLD + itemName, itemLore.toArray(new String[0])));
                     slot++;
                 }
 
                 List<String> spaceLore = new ArrayList<>();
                 spaceLore.add(hasSpace
-                        ? ChatColor.GREEN + "Space available ✓"
-                        : ChatColor.RED + "The next tower level would collide with another block!");
-                inv.setItem(34, item(Material.OAK_SAPLING, ChatColor.GREEN + "Growth Space", spaceLore.toArray(new String[0])));
+                        ? ColorUtils.GREEN + "Space available ✓"
+                        : ColorUtils.RED + "The next tower level would collide with another block!");
+                inv.setItem(34, item(Material.OAK_SAPLING, ColorUtils.GREEN + "Growth Space", spaceLore.toArray(new String[0])));
 
                 Material upgradeMaterial = canUpgrade && hasSpace
                         ? Material.LIME_STAINED_GLASS_PANE
                         : Material.RED_STAINED_GLASS_PANE;
-                ChatColor upgradeColor = canUpgrade && hasSpace ? ChatColor.GREEN : ChatColor.RED;
+                String upgradeColor = canUpgrade && hasSpace ? ColorUtils.GREEN : ColorUtils.RED;
                 String upgradeText = canUpgrade && hasSpace ? "Click to Upgrade!" : "Requirements not met";
 
                 inv.setItem(40, item(
                         upgradeMaterial,
                         upgradeColor + "⬆ UPGRADE TO LEVEL " + (currentLevel + 1),
                         "",
-                        ChatColor.GRAY + "The tower will grow taller",
+                        ColorUtils.GRAY + "The tower will grow taller",
                         upgradeColor + upgradeText
                 ));
             }
         } else {
             inv.setItem(40, item(
                     Material.NETHER_STAR,
-                    ChatColor.GOLD + "MAX LEVEL",
+                    ColorUtils.GOLD + "MAX LEVEL",
                     "",
-                    ChatColor.GREEN + "This turret is fully upgraded!"
+                    ColorUtils.GREEN + "This turret is fully upgraded!"
             ));
         }
 
-        inv.setItem(49, item(Material.BARRIER, ChatColor.RED + "✖ Close"));
+        inv.setItem(49, item(Material.BARRIER, ColorUtils.RED + "✖ Close"));
         OPEN_SESSIONS.put(
                 player.getUniqueId(),
                 new TurretSession(turretId, turretName, loc, baseRange, baseDamage, baseCapacity, baseEnergyCost)
@@ -214,18 +214,18 @@ public class TurretUpgradeGUI implements Listener {
         Material material = current
                 ? Material.GOLD_BLOCK
                 : (upgraded ? Material.LIME_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE);
-        ChatColor color = current ? ChatColor.GOLD : (upgraded ? ChatColor.GREEN : ChatColor.DARK_GRAY);
+        String color = current ? ColorUtils.GOLD : (upgraded ? ColorUtils.GREEN : ColorUtils.DARK_GRAY);
         String name = color + "Lv." + level
                 + (current ? " ◀ CURRENT" : (upgraded ? " ✓ UPGRADED" : " 🔒 LOCKED"));
 
         List<String> lore = new ArrayList<>();
-        lore.add(ChatColor.WHITE + "Range: " + ChatColor.GREEN
+        lore.add(ColorUtils.WHITE + "Range: " + ColorUtils.GREEN
                 + String.format("%.1f", TurretUpgradeManager.getRangeForLevel(baseRange, level)) + " blocks");
-        lore.add(ChatColor.WHITE + "Damage: " + ChatColor.GREEN
+        lore.add(ColorUtils.WHITE + "Damage: " + ColorUtils.GREEN
                 + String.format("%.1f", TurretUpgradeManager.getDamageForLevel(baseDamage, level)) + " HP");
-        lore.add(ChatColor.WHITE + "Capacity: " + ChatColor.GREEN
+        lore.add(ColorUtils.WHITE + "Capacity: " + ColorUtils.GREEN
                 + TurretUpgradeManager.getCapacityForLevel(baseCapacity, level) + " J");
-        lore.add(ChatColor.WHITE + "Energy/Shot: " + ChatColor.GREEN
+        lore.add(ColorUtils.WHITE + "Energy/Shot: " + ColorUtils.GREEN
                 + TurretUpgradeManager.getEnergyCostForLevel(baseEnergyCost, level) + " J");
 
         if (level > 1) {
@@ -233,15 +233,13 @@ public class TurretUpgradeGUI implements Listener {
                     TurretUpgradeManager.getRequirementForLevel(turretId, level - 1);
             if (requirement != null) {
                 lore.add("");
-                lore.add(ChatColor.GOLD + "Cost to reach this level:");
-                lore.add(ChatColor.YELLOW + "XP: " + ChatColor.WHITE + requirement.xpLevels);
+                lore.add(ColorUtils.GOLD + "Cost to reach this level:");
+                lore.add(ColorUtils.YELLOW + "XP: " + ColorUtils.WHITE + requirement.xpLevels);
                 for (ItemStack required : requirement.items) {
-                    String itemName = required.getItemMeta() != null && required.getItemMeta().hasDisplayName()
-                            ? required.getItemMeta().getDisplayName()
-                            : formatMaterialName(required.getType());
+                    String itemName = itemDisplayName(required);
                     boolean has = player != null && TurretUpgradeManager.hasItemInInventory(player, required);
-                    lore.add(ChatColor.GRAY + "- " + ChatColor.WHITE + itemName + " x" + required.getAmount()
-                            + (has ? ChatColor.GREEN + " ✓" : ChatColor.RED + " ✗"));
+                    lore.add(ColorUtils.GRAY + "- " + ColorUtils.WHITE + itemName + " x" + required.getAmount()
+                            + (has ? ColorUtils.GREEN + " ✓" : ColorUtils.RED + " ✗"));
                 }
             }
         }
@@ -256,7 +254,7 @@ public class TurretUpgradeGUI implements Listener {
         }
 
         TurretSession session = OPEN_SESSIONS.get(player.getUniqueId());
-        if (session == null || !e.getView().getTitle().contains("Lv.")) {
+        if (session == null) {
             return;
         }
 
@@ -277,20 +275,20 @@ public class TurretUpgradeGUI implements Listener {
         }
 
         if (!TurretUpgradeManager.canUpgrade(player, session.turretId, currentLevel)) {
-            player.sendMessage(ChatColor.RED + "You don't meet the upgrade requirements!");
+            player.sendMessage(ColorUtils.RED + "You don't meet the upgrade requirements!");
             player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BASS, 1f, 0.5f);
             return;
         }
 
         String prefix = session.turretId.contains("ATTACK") ? "attack_tower" : "rapid_tower";
         if (!TurretUpgradeManager.hasSpaceForUpgrade(session.loc, prefix, currentLevel)) {
-            player.sendMessage(ChatColor.RED + "The next turret level would collide with another block!");
+            player.sendMessage(ColorUtils.RED + "The next turret level would collide with another block!");
             player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BASS, 1f, 0.5f);
             return;
         }
 
         if (!TurretUpgradeManager.applyUpgrade(player, session.loc, session.turretId, prefix)) {
-            player.sendMessage(ChatColor.RED + "The turret upgrade could not be applied safely.");
+            player.sendMessage(ColorUtils.RED + "The turret upgrade could not be applied safely.");
             player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BASS, 1f, 0.5f);
             return;
         }
@@ -310,7 +308,7 @@ public class TurretUpgradeGUI implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent e) {
-        if (e.getPlayer() instanceof Player player && e.getView().getTitle().contains("Lv.")) {
+        if (e.getPlayer() instanceof Player player) {
             OPEN_SESSIONS.remove(player.getUniqueId());
         }
     }
@@ -318,10 +316,17 @@ public class TurretUpgradeGUI implements Listener {
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent e) {
         if (e.getWhoClicked() instanceof Player player
-                && OPEN_SESSIONS.containsKey(player.getUniqueId())
-                && e.getView().getTitle().contains("Lv.")) {
+                && OPEN_SESSIONS.containsKey(player.getUniqueId())) {
             e.setCancelled(true);
         }
+    }
+
+    private static String itemDisplayName(ItemStack item) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null && meta.hasDisplayName() && meta.displayName() != null) {
+            return PLAIN.serialize(meta.displayName());
+        }
+        return formatMaterialName(item.getType());
     }
 
     private static String formatMaterialName(Material material) {
@@ -338,9 +343,9 @@ public class TurretUpgradeGUI implements Listener {
     private static ItemStack item(Material material, String name, String... lore) {
         ItemStack stack = new ItemStack(material);
         ItemMeta meta = stack.getItemMeta();
-        meta.setDisplayName(name);
+        meta.displayName(ColorUtils.component(name));
         if (lore.length > 0) {
-            meta.setLore(List.of(lore));
+            meta.lore(java.util.Arrays.stream(lore).map(ColorUtils::component).toList());
         }
         stack.setItemMeta(meta);
         return stack;
