@@ -10,8 +10,8 @@ import com.github.drakescraft_labs.slimefun4.api.recipes.RecipeType;
 import com.github.drakescraft_labs.slimefun4.api.SlimefunAddon;
 import com.github.drakescraft_labs.slimefun4.core.handlers.BlockUseHandler;
 import com.github.drakescraft_labs.slimefun4.core.handlers.BlockPlaceHandler;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
-import org.bukkit.ChatColor;
+import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
+import com.Chagui68.weaponsaddon.utils.ColorUtils;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -82,22 +82,18 @@ public class AntimatterRitual extends SlimefunItem {
                     Material expectedMat = expected[row][col];
 
                     if (expectedMat == null) {
-                        SlimefunItem sfItem = BlockStorage.check(checkBlock);
+                        SlimefunItem sfItem = SlimefunStorageCompat.getItem(checkBlock);
                         if (sfItem == null || !sfItem.getId().equals("MA_ANTIMATTER_PEDESTAL")) {
-                            p.sendMessage(ChatColor.RED + "Missing pedestal at Row:" + row + " Col:" + col);
-                            p.sendMessage(ChatColor.GRAY + "Position: X:" + checkBlock.getX() + " Y:"
-                                    + checkBlock.getY() + " Z:" + checkBlock.getZ());
-                            p.sendMessage(ChatColor.GRAY + "Found: "
-                                    + (sfItem != null ? sfItem.getId() : checkBlock.getType()));
+                            p.sendMessage(ColorUtils.component("&cMissing pedestal at Row:" + row + " Col:" + col));
+                            p.sendMessage(ColorUtils.component("&7Position: X:" + checkBlock.getX() + " Y:" + checkBlock.getY() + " Z:" + checkBlock.getZ()));
+                            p.sendMessage(ColorUtils.component("&7Found: " + (sfItem != null ? sfItem.getId() : checkBlock.getType())));
                             return false;
                         }
                     } else {
                         if (checkBlock.getType() != expectedMat) {
-                            p.sendMessage(ChatColor.RED + "Wrong block at Row:" + row + " Col:" + col);
-                            p.sendMessage(ChatColor.GRAY + "Position: X:" + checkBlock.getX() + " Y:"
-                                    + checkBlock.getY() + " Z:" + checkBlock.getZ());
-                            p.sendMessage(
-                                    ChatColor.GRAY + "Expected: " + expectedMat + " | Found: " + checkBlock.getType());
+                            p.sendMessage(ColorUtils.component("&cWrong block at Row:" + row + " Col:" + col));
+                            p.sendMessage(ColorUtils.component("&7Position: X:" + checkBlock.getX() + " Y:" + checkBlock.getY() + " Z:" + checkBlock.getZ()));
+                            p.sendMessage(ColorUtils.component("&7Expected: " + expectedMat + " | Found: " + checkBlock.getType()));
                             return false;
                         }
                     }
@@ -120,8 +116,8 @@ public class AntimatterRitual extends SlimefunItem {
                             checkBlock.getLocation().add(0.5, 0.5, 0.5),
                             10, 0.3, 0.3, 0.3, 0.05);
 
-                    // Eliminar de BlockStorage si es Slimefun item
-                    BlockStorage.clearBlockInfo(checkBlock);
+                    // Remove Slimefun block data before destroying the ritual block
+                    SlimefunStorageCompat.clear(checkBlock);
 
                     // Destruir el bloque
                     checkBlock.setType(Material.AIR);
@@ -144,7 +140,7 @@ public class AntimatterRitual extends SlimefunItem {
             @Override
             public void onPlayerPlace(BlockPlaceEvent e) {
                 Block b = e.getBlock();
-                BlockStorage.addBlockInfo(b, "id", "MA_ANTIMATTER_RITUAL_CORE");
+                SlimefunStorageCompat.setData(b, "id", "MA_ANTIMATTER_RITUAL_CORE");
             }
         });
 
@@ -154,21 +150,21 @@ public class AntimatterRitual extends SlimefunItem {
             Block block = e.getClickedBlock().get();
 
             if (!RitualStructure.validateStructure(block, p)) {
-                p.sendMessage(ChatColor.translateAlternateColorCodes('&', "&4☢ &cInvalid ritual structure!"));
-                p.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7Check the required pattern"));
+                p.sendMessage(ColorUtils.component("&4☢ &cInvalid ritual structure!"));
+                p.sendMessage(ColorUtils.component("&7Check the required pattern"));
                 return;
             }
 
-            p.sendMessage(ChatColor.translateAlternateColorCodes('&', "&4☢ &fAntimatter Ritual &4ACTIVATED"));
-            p.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7Annihilating matter... &c⚠"));
+            p.sendMessage(ColorUtils.component("&4☢ &fAntimatter Ritual &4ACTIVATED"));
+            p.sendMessage(ColorUtils.component("&7Annihilating matter... &c⚠"));
             p.getInventory().addItem(AntimatterRifle.ANTIMATTER_RIFLE.clone());
-            p.sendMessage(ChatColor.translateAlternateColorCodes('&', "&a✓ &fAntimatter Rifle created successfully!"));
+            p.sendMessage(ColorUtils.component("&a✓ &fAntimatter Rifle created successfully!"));
             p.sendMessage(
-                    ChatColor.translateAlternateColorCodes('&', "&7Right-click entities for instant annihilation"));
+                    ColorUtils.component("&7Right-click entities for instant annihilation"));
 
             // Destruir el altar después de usarlo
             RitualStructure.destroyRitual(block);
-            p.sendMessage(ChatColor.translateAlternateColorCodes('&', "&c⚠ &7Ritual altar consumed by antimatter"));
+            p.sendMessage(ColorUtils.component("&c⚠ &7Ritual altar consumed by antimatter"));
         });
     }
 
