@@ -2,6 +2,7 @@ package com.Chagui68.weaponsaddon.utils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import com.github.drakescraft_labs.slimefun4.api.items.SlimefunItem;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 
@@ -51,6 +52,31 @@ public final class SlimefunStorageCompat {
         return slimefunId != null && slimefunId.equals(getData(location, "id"));
     }
 
+    public static SlimefunItem getItem(Location location) {
+        String id = getData(location, "id");
+        return id == null ? null : SlimefunItem.getById(id);
+    }
+
+    public static SlimefunItem getItem(Block block) {
+        return block == null ? null : getItem(block.getLocation());
+    }
+
+    public static void clear(Location location) {
+        if (location == null) {
+            return;
+        }
+
+        if (!modernClear(location)) {
+            legacyClear(location);
+        }
+    }
+
+    public static void clear(Block block) {
+        if (block != null) {
+            clear(block.getLocation());
+        }
+    }
+
     private static Object modernController()
             throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<?> slimefun = Class.forName(SLIMEFUN_CLASS, false, SlimefunStorageCompat.class.getClassLoader());
@@ -74,8 +100,14 @@ public final class SlimefunStorageCompat {
             try {
                 Method loaded = data.getClass().getMethod("isDataLoaded");
                 if (Boolean.FALSE.equals(loaded.invoke(data))) {
-                    Method load = controller.getClass().getMethod("loadBlockData", data.getClass().getSuperclass());
-                    load.invoke(controller, data);
+                    for (Method method : controller.getClass().getMethods()) {
+                        if (method.getName().equals("loadBlockData")
+                                && method.getParameterCount() == 1
+                                && method.getParameterTypes()[0].isAssignableFrom(data.getClass())) {
+                            method.invoke(controller, data);
+                            break;
+                        }
+                    }
                 }
             } catch (NoSuchMethodException ignored) {
                 // Runtime already exposes loaded data directly.
@@ -127,6 +159,39 @@ public final class SlimefunStorageCompat {
             return true;
         } catch (ReflectiveOperationException | LinkageError ignored) {
             return false;
+        }
+    }
+
+    private static boolean modernClear(Location location) {
+        try {
+            Object controller = modernController();
+            if (controller == null) {
+                return false;
+            }
+            controller.getClass().getMethod("removeBlock", Location.class).invoke(controller, location);
+            return true;
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return false;
+        }
+    }
+
+    private static void legacyClear(Location location) {
+        try {
+            Class<?> storage = Class.forName(
+                    LEGACY_STORAGE_CLASS,
+                    false,
+                    SlimefunStorageCompat.class.getClassLoader());
+
+            try {
+                storage.getMethod("clearBlockInfo", Location.class).invoke(null, location);
+                return;
+            } catch (NoSuchMethodException ignored) {
+                // Older facades may expose the Block overload.
+            }
+
+            storage.getMethod("clearBlockInfo", Block.class).invoke(null, location.getBlock());
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            // No compatible storage facade is available.
         }
     }
 
