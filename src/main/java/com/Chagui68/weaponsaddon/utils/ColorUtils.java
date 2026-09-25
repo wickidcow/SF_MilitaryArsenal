@@ -55,7 +55,9 @@ public final class ColorUtils {
             return Component.empty();
         }
 
-        return AMPERSAND.deserialize(normalizeHex(message));
+        return message.indexOf('§') >= 0
+                ? SECTION.deserialize(message)
+                : AMPERSAND.deserialize(normalizeHex(message));
     }
 
     /**
