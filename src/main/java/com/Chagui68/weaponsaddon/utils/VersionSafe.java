@@ -53,69 +53,32 @@ public class VersionSafe {
      * Safely gets an Enchantment by a key that is valid across versions.
      */
     public static Enchantment getEnchantment(String key) {
+        if (key == null || key.isBlank()) {
+            return null;
+        }
+
+        String normalized = switch (key.toLowerCase(Locale.ROOT)) {
+            case "damage_all" -> "sharpness";
+            case "arrow_damage" -> "power";
+            case "arrow_knockback" -> "punch";
+            case "protection_environmental" -> "protection";
+            case "protection_projectile" -> "projectile_protection";
+            case "protection_explosions" -> "blast_protection";
+            case "protection_fire" -> "fire_protection";
+            case "oxygen" -> "respiration";
+            case "loot_bonus_mobs" -> "looting";
+            case "durability" -> "unbreaking";
+            case "dig_speed" -> "efficiency";
+            case "damage_undead" -> "smite";
+            case "damage_arthropods" -> "bane_of_arthropods";
+            default -> key.toLowerCase(Locale.ROOT);
+        };
+
         try {
-            Enchantment ench = Enchantment.getByKey(NamespacedKey.minecraft(key.toLowerCase(Locale.ROOT)));
-            if (ench != null) {
-                return ench;
-            }
-        } catch (NoClassDefFoundError | NoSuchMethodError ignored) {
-            // Retain the original fallback behavior for older Slimefun-compatible environments.
+            return Registry.ENCHANTMENT.get(NamespacedKey.minecraft(normalized));
+        } catch (IllegalArgumentException ex) {
+            return null;
         }
-
-        String name = null;
-        switch (key.toLowerCase(Locale.ROOT)) {
-            case "sharpness":
-                name = "DAMAGE_ALL";
-                break;
-            case "power":
-                name = "ARROW_DAMAGE";
-                break;
-            case "punch":
-                name = "ARROW_KNOCKBACK";
-                break;
-            case "protection":
-                name = "PROTECTION_ENVIRONMENTAL";
-                break;
-            case "projectile_protection":
-                name = "PROTECTION_PROJECTILE";
-                break;
-            case "blast_protection":
-                name = "PROTECTION_EXPLOSIONS";
-                break;
-            case "fire_protection":
-                name = "PROTECTION_FIRE";
-                break;
-            case "respiration":
-                name = "OXYGEN";
-                break;
-            case "looting":
-                name = "LOOT_BONUS_MOBS";
-                break;
-            case "unbreaking":
-                name = "DURABILITY";
-                break;
-            case "efficiency":
-                name = "DIG_SPEED";
-                break;
-            case "smite":
-                name = "DAMAGE_UNDEAD";
-                break;
-            case "bane_of_arthropods":
-                name = "DAMAGE_ARTHROPODS";
-                break;
-            default:
-                break;
-        }
-
-        if (name != null) {
-            try {
-                return Enchantment.getByName(name);
-            } catch (Exception ignored) {
-                return null;
-            }
-        }
-
-        return null;
     }
 
     /**
@@ -183,56 +146,27 @@ public class VersionSafe {
     /**
      * Safely gets a PotionEffectType by name.
      */
-    @SuppressWarnings("deprecation")
     public static PotionEffectType getPotionEffectType(String name) {
-        try {
-            PotionEffectType type = PotionEffectType.getByName(name);
-            if (type != null)
-                return type;
-
-            if (name.equalsIgnoreCase("SLOWNESS"))
-                return PotionEffectType.getByName("SLOW");
-            if (name.equalsIgnoreCase("MINING_FATIGUE"))
-                return PotionEffectType.getByName("SLOW_DIGGING");
-            if (name.equalsIgnoreCase("HASTE"))
-                return PotionEffectType.getByName("FAST_DIGGING");
-            if (name.equalsIgnoreCase("STRENGTH"))
-                return PotionEffectType.getByName("INCREASE_DAMAGE");
-            if (name.equalsIgnoreCase("INSTANT_HEALTH"))
-                return PotionEffectType.getByName("HEAL");
-            if (name.equalsIgnoreCase("INSTANT_DAMAGE"))
-                return PotionEffectType.getByName("HARM");
-            if (name.equalsIgnoreCase("NAUSEA"))
-                return PotionEffectType.getByName("CONFUSION");
-            if (name.equalsIgnoreCase("RESISTANCE"))
-                return PotionEffectType.getByName("DAMAGE_RESISTANCE");
-            if (name.equalsIgnoreCase("SPEED"))
-                return PotionEffectType.getByName("SPEED");
-            if (name.equalsIgnoreCase("FIRE_RESISTANCE"))
-                return PotionEffectType.getByName("FIRE_RESISTANCE");
-            if (name.equalsIgnoreCase("JUMP_BOOST"))
-                return PotionEffectType.getByName("JUMP");
-            if (name.equalsIgnoreCase("NIGHT_VISION"))
-                return PotionEffectType.getByName("NIGHT_VISION");
-            if (name.equalsIgnoreCase("ABSORPTION"))
-                return PotionEffectType.getByName("ABSORPTION");
-            if (name.equalsIgnoreCase("SATURATION"))
-                return PotionEffectType.getByName("SATURATION");
-            if (name.equalsIgnoreCase("LEVITATION"))
-                return PotionEffectType.getByName("LEVITATION");
-            if (name.equalsIgnoreCase("GLOWING"))
-                return PotionEffectType.getByName("GLOWING");
-            if (name.equalsIgnoreCase("WITHER"))
-                return PotionEffectType.getByName("WITHER");
-            if (name.equalsIgnoreCase("HUNGER"))
-                return PotionEffectType.getByName("HUNGER");
-            if (name.equalsIgnoreCase("WEAKNESS"))
-                return PotionEffectType.getByName("WEAKNESS");
-            if (name.equalsIgnoreCase("DARKNESS"))
-                return PotionEffectType.getByName("DARKNESS");
-
+        if (name == null || name.isBlank()) {
             return null;
-        } catch (Exception ignored) {
+        }
+
+        String normalized = switch (name.toUpperCase(Locale.ROOT)) {
+            case "SLOW" -> "slowness";
+            case "SLOW_DIGGING" -> "mining_fatigue";
+            case "FAST_DIGGING" -> "haste";
+            case "INCREASE_DAMAGE" -> "strength";
+            case "HEAL" -> "instant_health";
+            case "HARM" -> "instant_damage";
+            case "CONFUSION" -> "nausea";
+            case "DAMAGE_RESISTANCE" -> "resistance";
+            case "JUMP" -> "jump_boost";
+            default -> name.toLowerCase(Locale.ROOT);
+        };
+
+        try {
+            return Registry.POTION_EFFECT_TYPE.get(NamespacedKey.minecraft(normalized));
+        } catch (IllegalArgumentException ex) {
             return null;
         }
     }
