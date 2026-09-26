@@ -12,7 +12,7 @@ import com.github.drakescraft_labs.slimefun4.core.handlers.BlockBreakHandler;
 import com.github.drakescraft_labs.slimefun4.core.handlers.BlockPlaceHandler;
 import com.github.drakescraft_labs.slimefun4.core.networks.energy.EnergyNetComponentType;
 import com.github.drakescraft_labs.slimefun4.legacy.Objects.handlers.BlockTicker;
-import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
+import com.xzavier0722.mc.plugin.slimefun4.storage.controller.ASlimefunDataContainer;
 import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
@@ -39,7 +39,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
@@ -172,7 +171,7 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
 
         addItemHandler(new BlockTicker() {
             @Override
-            public void tick(Block b, SlimefunItem item, Config data) {
+            public void tick(Block b, SlimefunItem item, ASlimefunDataContainer data) {
                 AbstractTurret.this.tick(b);
             }
 
@@ -442,7 +441,7 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
         if (!(damager instanceof Player player)) {
             return;
         }
-        if (interaction.hasMetadata("MA_DISMANTLED") || !interaction.isValid()) {
+        if (interaction.getScoreboardTags().contains("MA_DISMANTLED") || !interaction.isValid()) {
             return;
         }
 
@@ -457,7 +456,7 @@ public abstract class AbstractTurret extends CustomRecipeItem implements EnergyN
 
         String id = SlimefunStorageCompat.getData(loc, "id");
         if (getTurretId().equals(id)) {
-            interaction.setMetadata("MA_DISMANTLED", new FixedMetadataValue(WeaponsAddon.getInstance(), true));
+            interaction.addScoreboardTag("MA_DISMANTLED");
             dismantle(loc);
             interaction.getWorld().playSound(interaction.getLocation(), Sound.BLOCK_LANTERN_BREAK, 1f, 1f);
             interaction.getWorld().dropItemNaturally(loc, getTurretItem().clone());
