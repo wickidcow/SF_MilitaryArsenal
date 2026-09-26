@@ -3,7 +3,8 @@ package com.Chagui68.weaponsaddon.utils;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
-import org.bukkit.Registry;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.enchantments.Enchantment;
@@ -32,7 +33,7 @@ public class VersionSafe {
             if (key.equals("horse_jump_strength")) {
                 key = "jump_strength";
             }
-            return Registry.ATTRIBUTE.get(NamespacedKey.minecraft(key));
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.ATTRIBUTE).get(NamespacedKey.minecraft(key));
         } catch (IllegalArgumentException ex) {
             return null;
         }
@@ -75,7 +76,7 @@ public class VersionSafe {
         };
 
         try {
-            return Registry.ENCHANTMENT.get(NamespacedKey.minecraft(normalized));
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft(normalized));
         } catch (IllegalArgumentException ex) {
             return null;
         }
@@ -165,7 +166,7 @@ public class VersionSafe {
         };
 
         try {
-            return Registry.POTION_EFFECT_TYPE.get(NamespacedKey.minecraft(normalized));
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.MOB_EFFECT).get(NamespacedKey.minecraft(normalized));
         } catch (IllegalArgumentException ex) {
             return null;
         }
