@@ -15,7 +15,7 @@ import com.github.drakescraft_labs.slimefun4.core.handlers.BlockBreakHandler;
 import com.github.drakescraft_labs.slimefun4.core.handlers.BlockPlaceHandler;
 import com.github.drakescraft_labs.slimefun4.core.networks.energy.EnergyNetComponentType;
 import com.github.drakescraft_labs.slimefun4.legacy.Objects.handlers.BlockTicker;
-import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
+import com.xzavier0722.mc.plugin.slimefun4.storage.controller.ASlimefunDataContainer;
 import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
@@ -39,7 +39,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Transformation;
@@ -125,7 +124,7 @@ public class MountableTurret extends CustomRecipeItem implements EnergyNetCompon
 
         addItemHandler(new BlockTicker() {
             @Override
-            public void tick(Block b, SlimefunItem item, Config data) {
+            public void tick(Block b, SlimefunItem item, ASlimefunDataContainer data) {
                 MountableTurret.this.tick(b);
             }
 
@@ -271,7 +270,7 @@ public class MountableTurret extends CustomRecipeItem implements EnergyNetCompon
         if (!interaction.getScoreboardTags().contains("MOUNT_HITBOX")) {
             return;
         }
-        if (interaction.hasMetadata("MA_DISMANTLED") || !interaction.isValid()) {
+        if (interaction.getScoreboardTags().contains("MA_DISMANTLED") || !interaction.isValid()) {
             e.setCancelled(true);
         }
     }
@@ -286,7 +285,7 @@ public class MountableTurret extends CustomRecipeItem implements EnergyNetCompon
         }
 
         e.setCancelled(true);
-        if (interaction.hasMetadata("MA_DISMANTLED") || !interaction.isValid()) {
+        if (interaction.getScoreboardTags().contains("MA_DISMANTLED") || !interaction.isValid()) {
             return;
         }
 
@@ -333,7 +332,7 @@ public class MountableTurret extends CustomRecipeItem implements EnergyNetCompon
     }
 
     private void handleDismantle(Interaction interaction, Player player) {
-        if (interaction.hasMetadata("MA_DISMANTLED") || !interaction.isValid()) {
+        if (interaction.getScoreboardTags().contains("MA_DISMANTLED") || !interaction.isValid()) {
             return;
         }
 
@@ -349,7 +348,7 @@ public class MountableTurret extends CustomRecipeItem implements EnergyNetCompon
             return;
         }
 
-        interaction.setMetadata("MA_DISMANTLED", new FixedMetadataValue(WeaponsAddon.getInstance(), true));
+        interaction.addScoreboardTag("MA_DISMANTLED");
         SlimefunStorageCompat.clear(loc);
         loc.getBlock().setType(Material.AIR, false);
         interaction.getWorld().playSound(loc, Sound.BLOCK_LANTERN_BREAK, 1f, 1f);
