@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LEGACY_ARTIFACT_VERSION: "1.1.7"
-  OUTPUT_NAME: "SF_MilitaryArsenal1.1.7.jar"
+  LEGACY_ARTIFACT_VERSION: "1.1.8"
+  OUTPUT_NAME: "SF_MilitaryArsenal1.1.8.jar"
 
 jobs:
   build:
@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -Fq '<version>1.1.7</version>' pom.xml
+          grep -Fq '<version>1.1.8</version>' pom.xml
           grep -Fq '<paper.version>1.21.11-R0.1-SNAPSHOT</paper.version>' pom.xml
           grep -Fq '<maven.compiler.release>21</maven.compiler.release>' pom.xml
           grep -Fq '<finalName>SF_MilitaryArsenal${project.version}</finalName>' pom.xml
@@ -78,6 +78,15 @@ jobs:
           grep -Fq 'InventoryClickEvent' "$manager"
           grep -Fq 'InventoryDragEvent' "$manager"
           grep -Fq 'event.isShiftClick()' "$manager"
+      - name: Verify deprecated hot/runtime APIs stay removed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -nE 'CSCoreLibPlugin\.Configuration\.Config|FixedMetadataValue|org\.bukkit\.ChatColor|getTitle\(\)|Registry\.ENCHANTMENT' src/main/java; then
+            echo "Deprecated runtime API reintroduced." >&2
+            exit 1
+          fi
+
       - name: Install Slimefun Legacy 4.1.60 API
         env:
           GH_TOKEN: ${{ github.token }}
@@ -137,7 +146,7 @@ jobs:
           set -euo pipefail
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then TAG="$GITHUB_REF_NAME"; else TAG="v${LEGACY_ARTIFACT_VERSION}"; fi
           JAR="dist/${OUTPUT_NAME}"
-          NOTES="MilitaryArsenal 1.1.7 adds Paper 26.3 alpha compatibility validation while retaining Java 21 universal bytecode, Paper 26.2 as the primary production target, ItemsAdder integration, and all existing security and anti-dupe safeguards. Maven now emits ${OUTPUT_NAME} directly."
+          NOTES="MilitaryArsenal 1.1.8 removes deprecated ticker, metadata, inventory-title, color, and registry APIs while retaining Java 21 universal bytecode, Paper 26.2 as the primary production target, Paper 26.3 compatibility, ItemsAdder integration, and existing security and anti-dupe safeguards."
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$JAR" --clobber
           else

@@ -16,7 +16,7 @@ import com.github.drakescraft_labs.slimefun4.core.handlers.BlockBreakHandler;
 import com.github.drakescraft_labs.slimefun4.core.handlers.BlockPlaceHandler;
 import com.github.drakescraft_labs.slimefun4.core.networks.energy.EnergyNetComponentType;
 import com.github.drakescraft_labs.slimefun4.legacy.Objects.handlers.BlockTicker;
-import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
+import com.xzavier0722.mc.plugin.slimefun4.storage.controller.ASlimefunDataContainer;
 import com.Chagui68.weaponsaddon.utils.SlimefunStorageCompat;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
@@ -44,7 +44,6 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Transformation;
@@ -145,7 +144,7 @@ public class SniperTurret extends CustomRecipeItem implements EnergyNetComponent
 
         addItemHandler(new BlockTicker() {
             @Override
-            public void tick(Block b, SlimefunItem item, Config data) {
+            public void tick(Block b, SlimefunItem item, ASlimefunDataContainer data) {
                 SniperTurret.this.tick(b);
             }
 
@@ -383,7 +382,7 @@ public class SniperTurret extends CustomRecipeItem implements EnergyNetComponent
         if (!(damager instanceof Player)) {
             return;
         }
-        if (interaction.hasMetadata("MA_DISMANTLED") || !interaction.isValid()) {
+        if (interaction.getScoreboardTags().contains("MA_DISMANTLED") || !interaction.isValid()) {
             return;
         }
 
@@ -399,7 +398,7 @@ public class SniperTurret extends CustomRecipeItem implements EnergyNetComponent
             return;
         }
 
-        interaction.setMetadata("MA_DISMANTLED", new FixedMetadataValue(WeaponsAddon.getInstance(), true));
+        interaction.addScoreboardTag("MA_DISMANTLED");
         SlimefunStorageCompat.clear(loc);
         loc.getBlock().setType(Material.AIR, false);
         interaction.getWorld().playSound(loc, Sound.BLOCK_LANTERN_BREAK, 1f, 1f);

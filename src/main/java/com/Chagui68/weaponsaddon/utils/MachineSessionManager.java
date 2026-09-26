@@ -1,6 +1,6 @@
 package com.Chagui68.weaponsaddon.utils;
 
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -15,6 +15,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -28,6 +29,12 @@ public final class MachineSessionManager implements Listener {
 
     private static final Map<String, UUID> MACHINE_OWNERS = new HashMap<>();
     private static final Map<UUID, String> PLAYER_MACHINES = new HashMap<>();
+    private static final Set<Component> PROTECTED_TITLES = Set.of(
+            ColorUtils.component("&8Weapon Upgrade Table"),
+            ColorUtils.component("&8Ammunition Workshop"),
+            ColorUtils.component("&4Military Crafting Table"),
+            ColorUtils.component("&4Machine Fabricator"),
+            ColorUtils.component("&4Bombardment Terminal"));
 
     public static synchronized boolean tryAcquire(Player player, Location location) {
         String key = key(location);
@@ -75,7 +82,8 @@ public final class MachineSessionManager implements Listener {
         }
 
         event.setCancelled(true);
-        event.getPlayer().sendMessage(ChatColor.RED + "This machine is currently in use. Close its GUI before breaking it.");
+        event.getPlayer().sendMessage(
+                ColorUtils.component("&cThis machine is currently in use. Close its GUI before breaking it."));
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -90,7 +98,7 @@ public final class MachineSessionManager implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onProtectedInventoryClick(InventoryClickEvent event) {
-        if (!isProtectedInventoryTitle(event.getView().getTitle())) {
+        if (!isProtectedInventoryTitle(event.getView().title())) {
             return;
         }
 
@@ -101,7 +109,7 @@ public final class MachineSessionManager implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onProtectedInventoryDrag(InventoryDragEvent event) {
-        if (!isProtectedInventoryTitle(event.getView().getTitle())) {
+        if (!isProtectedInventoryTitle(event.getView().title())) {
             return;
         }
 
@@ -116,12 +124,8 @@ public final class MachineSessionManager implements Listener {
         release(event.getPlayer());
     }
 
-    private static boolean isProtectedInventoryTitle(String title) {
-        return title.equals(ChatColor.DARK_GRAY + "Weapon Upgrade Table")
-                || title.equals(ChatColor.DARK_GRAY + "Ammunition Workshop")
-                || title.equals(ChatColor.DARK_RED + "Military Crafting Table")
-                || title.equals(ChatColor.DARK_RED + "Machine Fabricator")
-                || title.equals(ChatColor.DARK_RED + "Bombardment Terminal");
+    private static boolean isProtectedInventoryTitle(Component title) {
+        return PROTECTED_TITLES.contains(title);
     }
 
     private static String key(Location location) {
